@@ -1,0 +1,30 @@
+[build-system]
+requires      = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+# All project metadata lives in setup.py.
+# The [project] table tells setuptools which fields to read from there.
+[project]
+name    = "local-llm-core"
+dynamic = [
+    "version",
+    "description",
+    "readme",
+    "requires-python",
+    "license",
+    "authors",
+    "keywords",
+    "classifiers",
+    "urls",
+    "dependencies",
+    "optional-dependencies",
+]
+
+# Defined here directly (not dynamic) so setuptools always picks it up.
+# This registers `local-llm-setup` as a shell command after pip install.
+[project.scripts]
+local-llm-setup = "local_llm_core._setup_cli:main"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths    = ["tests"]

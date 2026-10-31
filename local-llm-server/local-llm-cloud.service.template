@@ -1,0 +1,86 @@
+[Unit]
+Description=Local LLM Cloud - REST API Server
+Documentation=https://github.com/Deveeelloopase/Local-LLM
+After=network-online.target postgresql.service
+Wants=network-online.target
+StartLimitIntervalSec=600
+StartLimitBurst=5
+StartLimitAction=none
+
+[Service]
+# Type=notify + WatchdogSec: the daemon sends READY=1 from its lifespan
+# and WATCHDOG=1 every 15s from the asyncio event loop. If the loop
+# freezes (the P0 deadlock class), the heartbeat stops, systemd expires
+# WatchdogSec, and the unit is killed and restarted.
+Type=notify
+NotifyAccess=main
+WatchdogSec=60
+
+User=${SERVICE_USER}
+Group=${SERVICE_GROUP}
+
+WorkingDirectory=${INSTALL_PREFIX}
+
+Environment="VIRTUAL_ENV=${VENV_DIR}"
+Environment="PYTHONUNBUFFERED=1"
+Environment="PYTHONDONTWRITEBYTECODE=1"
+Environment="LLM_CONFIG_PATH=${CONFIG_FILE}"
+Environment="LLM_STATE_DIR=${STATE_DIR}"
+Environment="LLM_SETUP_RUNNING=1"
+Environment="SKIP_POST_INSTALL=1"
+Environment="PATH=${VENV_DIR}/bin:/opt/rocm/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+Environment="HSA_OVERRIDE_GFX_VERSION=9.0.0"
+
+EnvironmentFile=-${ENV_FILE}
+
+LimitMEMLOCK=2G
+LimitNOFILE=65536
+LimitNPROC=8192
+
+MemoryHigh=10G
+MemoryMax=12G
+
+# One writer per file: log to journald, app writes to its own FileHandler.
+StandardOutput=journal
+StandardError=journal
+
+# Fail fast if port is in use. Do not kill the occupant.
+ExecStartPre=/bin/bash -c 'ss -tln 2>/dev/null | grep -q ":${SERVICE_PORT} " && { echo "port ${SERVICE_PORT} in use" >&2; exit 1; } || exit 0'
+ExecStartPre=/bin/bash -c 'mkdir -p "${LOG_DIR}" "${STATE_DIR}"'
+
+# Bind address comes from config.yaml (server.host). Do NOT add --host here.
+ExecStart=${EXEC_BIN} \
+    serve \
+    --port ${SERVICE_PORT} \
+    --workers 1 \
+    --drain-timeout 120 \
+    --log-level info \
+    --log-file ${LOG_DIR}/llm_server.log \
+    --config ${CONFIG_FILE}
+
+ExecStop=/bin/kill -TERM $MAINPID
+TimeoutStopSec=150
+KillMode=mixed
+KillSignal=SIGTERM
+
+Restart=on-failure
+RestartSec=5
+TimeoutStartSec=180
+
+# ── Hardening (non-root + ProtectSystem) ─────────────────────────────────
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=${STATE_DIR} ${LOG_DIR}
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictNamespaces=true
+RestrictRealtime=true
+LockPersonality=true
+
+SyslogIdentifier=local-llm-server
+
+[Install]
+WantedBy=multi-user.target

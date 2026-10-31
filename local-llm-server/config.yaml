@@ -1,0 +1,1360 @@
+# /home/deve-oops/AMB-OPT/local-llm-cloud/local-llm-server/config.yaml
+# ════════════════════════════════════════════════════════════════════════════════
+# LOCAL LLM CLOUD — PRODUCTION CONFIGURATION v1.0.0 — Developed by Devellopase
+# ════════════════════════════════════════════════════════════════════════════════
+#
+# Single source of truth for BOTH local-llm-server AND local-llm-core.
+# local-llm-core is a library — it has no config file of its own.
+# local-llm-server reads this file, then passes each section dict to the
+# relevant core constructor as a plain Python dict.
+#
+# 📋 SECTIONS:
+#   SERVER-SIDE (consumed by local-llm-server only):
+#     version, server, api, conversation, websocket, monitoring,
+#     logging, security, shutdown, load_balancer, debug
+#
+#   ENGINE (passed from server → local-llm-core constructors):
+#     hardware, hardware_profiles, gpu_analyzer, system, kernels,
+#     memory, inference, scheduler, drive_pipeline, layer_streamer,
+#     throughput_optimizer, nvme_kv_cache, speculative, multi_gpu,
+#     models, model_loader, model_lifecycle, bitnet, circuit_breaker
+#
+# ════════════════════════════════════════════════════════════════════════════════
+
+version: "1.0.0"
+
+# ════════════════════════════════════════════════════════════════════════════════
+# 🔋 POWER — Host power management (suspend/idle control)
+# ════════════════════════════════════════════════════════════════════════════════
+power:
+  # PRODUCTION: set to true. Journalctl on this host recorded a 6+ hour
+  # suspend gap mid-session — a scheduled 700s CLI generation was frozen
+  # by the host suspending to RAM, not by the server. systemd-inhibit
+  # holds the host awake while the process is alive.
+  prevent_suspend: true
+
+# ════════════════════════════════════════════════════════════════════════════════
+# 🌐 SERVER — Network, CORS, TLS, connection limits
+# ════════════════════════════════════════════════════════════════════════════════
+server:
+  host: "127.0.0.1"
+  port: "8080"
+  workers: 1
+  worker_timeout_s: 120
+  max_connections: 1000
+  backlog: 2048
+  # max_body_size_mb (RCA S5): was 100 MB — far larger than any realistic
+  # chat request. A 100,000-character message is ~100 KB; even a 500K-char
+  # system prompt fits in 500 KB. 4 MB is generous and prevents a single
+  # client from exhausting memory by streaming an oversized body into the
+  # ASGI layer before Pydantic validation even runs. Raise this only if
+  # you have a concrete use case (e.g. embedding long documents as
+  # context); the model's own 8K context cap will reject oversized
+  # prompts regardless of body size (see /v1/chat/completions 413 handler).
+  max_body_size_mb: 4
+  max_header_size_kb: 8
+
+  # fail_fast_on_startup_error: when a fatal error occurs during lifespan
+  # startup (key store unreachable, config invalid, engine init failed),
+  # raise → uvicorn exits non-zero → systemd restarts the unit. When
+  # false, the server stays up in a broken but observable state: /health
+  # returns 200 with health_status="startup_failed", every real endpoint
+  # 503s. Default true — see RCA 4.2. Set false ONLY on a dev box.
+  fail_fast_on_startup_error: true
+
+  tls:
+    enabled: false
+    cert_path: "/etc/ssl/certs/server.crt"
+    key_path: "/etc/ssl/private/server.key"
+
+  cors_origins:
+    - "http://localhost:3000"
+    - "http://localhost:8080"
+  cors_allow_credentials: true
+  cors_expose_headers:
+    - "X-Request-ID"
+    - "X-RateLimit-Remaining"
+
+  trusted_proxies:
+    - "127.0.0.1"
+
+
+# ════════════════════════════════════════════════════════════════════════════════
+# 🔑 API — Authentication, rate limiting, key store
+# ════════════════════════════════════════════════════════════════════════════════
+api:
+  # Secrets come from the environment (see api_server.py::_expand_env_vars,
+  # which supports ${VAR} and ${VAR:default}). The previous plaintext values
+  # committed here MUST be treated as compromised — rotate them in Postgres
+  # / the key store, then export the following before starting the server:
+  #   LLM_API_KEY       — user-facing static key   (X-API-Key)
+  #   LLM_MASTER_KEY    — admin key                 (X-Master-Key)
+  #   LLM_DB_PASSWORD   — Postgres password for api + conversation DBs
+  key: "${LLM_API_KEY}"
+  master_key: "${LLM_MASTER_KEY}"
+
+  key_store_enabled: true
+  storage: "postgresql"
+  # key_store_allow_memory_fallback: if true, a Postgres connectivity
+  # failure at startup falls back to an in-memory SQLite keystore (all
+  # existing keys become invalid until restart). Default false — fail
+  # fast so systemd / the operator sees the failure instead of a silently
+  # broken auth tier. See RCA N4.
+  key_store_allow_memory_fallback: false
+
+  key_store_db: "/home/deve-oops/AMB-OPT/local-llm-cloud/tmp/llm_keys.db"
+
+  host: "localhost"
+  port: "5432"
+  database: "llm_keys"
+  username: "amb_llm"
+  password: "${LLM_DB_PASSWORD}"
+
+  pool_size: 10
+  max_overflow: 5
+  pool_timeout: 30
+  pool_recycle: 3600
+
+  retry_attempts: 3
+  retry_backoff_base: 0.1
+  retry_jitter: true
+
+  sqlite_cache_mb: 64
+
+  log_requests: true
+  request_log_retention_days: 30
+  soft_delete_retention_days: 90
+  key_cache_size: 1000
+  expected_concurrency: 100
+  prune_interval_hours: 1
+  batch_usage_updates: false
+  usage_batch_interval: 1.0
+  usage_batch_size: 100
+
+  ip_rate_limit:
+    enabled: true
+    rps: 50.0
+    capacity: 100.0
+    reset_idle_seconds: 5.0
+    max_age_seconds: 300.0
+    bypass_localhost: true
+    adaptive: false
+    adaptive_factor: 0.5
+    pressure_latency_ms: 200.0
+    pressure_queue_depth: 10
+
+  api_key_rate_limit_rps: 100.0
+  api_key_rate_limit_capacity: 200.0
+  api_key_concurrency_limit: 0
+
+  admin_rate_limit:
+    max_requests_per_hour: 1000
+
+
+# ════════════════════════════════════════════════════════════════════════════════
+# 🔧 HARDWARE — GPU detection, preferred backend, timeouts
+# ════════════════════════════════════════════════════════════════════════════════
+# Passed to: HardwareDetector(config=cfg["hardware"])
+hardware:
+  auto_detect: true
+  preferred_backend: "hip"          # cuda | rocm | hip | vulkan | opencl | cpu
+  # force_backend: optional hard override (e.g. "rocm", "vulkan", "cpu").
+  # Leave commented — auto-detection uses PyTorch HIP as the primary signal
+  # and correctly identifies ROCm/HIP even for APUs without HSA_OVERRIDE.
+  # Uncomment only if auto-detection gives the wrong result on your hardware.
+  # force_backend: "rocm"
+  detection_timeout_s: 30.0
+  cmd_timeout_s: 5
+
+  vulkan_icd_paths:
+    - "/usr/share/vulkan/icd.d"
+    - "/etc/vulkan/icd.d"
+    - "/usr/lib/x86_64-linux-gnu/GL/vulkan/icd.d"
+    - "/usr/lib/vulkan/icd.d"
+    - "/usr/lib64/vulkan/icd.d"
+    - "/run/opengl-driver/share/vulkan/icd.d"
+
+  # NOTE: "hip" is normalised to "rocm" internally — it is never assigned as a
+  # GPU backend label.  Keep this list clean so available_backends is accurate.
+  backend_order:
+    - "cuda"
+    - "rocm"
+    - "vulkan"
+    - "opencl"
+    - "mps"
+    - "numba"
+    - "numpy"
+    - "cpu"
+
+
+# ════════════════════════════════════════════════════════════════════════════════
+# 📊 HARDWARE PROFILES — Pre-defined inference configs per GPU class
+# ════════════════════════════════════════════════════════════════════════════════
+# Passed to: HardwareProfileSelector(config=cfg["hardware_profiles"])
+hardware_profiles:
+  force_profile: null                  # Force a specific profile, null = auto-detect
+
+  detection_thresholds:
+    apu_4gb_min_mb: 3073
+    gpu_4gb_max_mb: 5119
+    gpu_6gb_max_mb: 7167
+    gpu_8gb_max_mb: 10239
+    gpu_12gb_max_mb: 14335
+    gpu_16gb_max_mb: 20479
+
+  overrides:
+    apu_2gb:
+      # context_length here acts as a FLOOR for the context planner
+      # (max(profile_ctx, model_loader.min_context_tokens)), not a ceiling.
+      # The real value is negotiated per-model by the memory-aware planner
+      # in model_loader._load_sync, capped by model_loader.max_context_tokens.
+      context_length: 4096
+      target_tps: 3.0
+      # n_batch: larger batch size improves prompt-processing throughput
+      # (the prefill phase). 2048 is the maximum the hardware profile allows
+      # and matches the existing apu_2gb default, but surfaced here so it
+      # can be tuned without touching hardware_profiles.py source.
+      n_batch: 2048
+      n_parallel: 2
+      # context_vs_layers_priority: controls the layer-offload planner's
+      # context/layers tradeoff (see compute_optimal_offload_plan in
+      # layer_streamer.py). "balanced" (default) grows context up to 4×
+      # the base value WHILE COMPUTING the layer plan, then that inflated
+      # value is discarded when the model is actually loaded — producing
+      # a mismatch between the FLP log line ("context_len=32768") and
+      # the actual load ("n_ctx=8192"), and wasting the VRAM planning
+      # budget on context headroom we won't use. "layers" keeps the
+      # planner and the actual load consistent, and spends the VRAM on
+      # more offloaded layers instead. See RCA finding N1.
+      context_vs_layers_priority: "layers"
+      # kv_cache_quant (Q4): the base profile uses "q4_0" to save memory
+      # at the (previously default) 40960-token context. After capping
+      # context to 8192 (see model_loader.max_context_tokens), q4_0's
+      # savings are no longer needed — KV footprint at 8K is only
+      # ~8 MB q4_0 vs ~16 MB q8_0 (from the FLP tradeoff calculation;
+      # the "kv_layer_mb" field). q4_0 KV quantisation is widely
+      # documented as degrading output quality noticeably vs q8_0 (in
+      # particular on the attention/softmax path); q8_0 is the safe
+      # default below ~16K context. Expect ~1 fewer offloaded layer
+      # (12 vs 13 on this box, from the planner maths) — a small
+      # throughput cost for a clear quality gain.
+      kv_cache_quant: "q8_0"
+      # speculative_decoding (Q6): the base apu_2gb profile has
+      # speculative_decoding: True, but no draft model is configured
+      # (throughput_optimizer: false in [inference], and the only
+      # candidate draft profile has autoload: false). The flag was
+      # therefore cosmetic — setting it false here makes the actual
+      # behaviour visible in the profile dump. If you later enable
+      # speculative decoding by setting inference.throughput_optimizer:
+      # true AND marking a draft profile autoload: true, remove this
+      # override so the profile's True takes effect again.
+      speculative_decoding: false
+      # use_mlock (RCA Q3): the base `apu_2gb` profile in
+      # hardware_profiles.py ships with use_mlock=True (intent: pin
+      # weights in RAM so the OS can't swap them out under pressure).
+      # In practice that reserves ~4.8 GB of unreclaimable memory on a
+      # 13.8 GB host that also runs Postgres, ~1 GiB of huge pages, and
+      # a 2 GB iGPU carve-out — pushing the total working set close to
+      # the cgroup's MemoryMax=12G. Some models additionally can't mlock
+      # if RLIMIT_MEMLOCK is too low. All current profiles in this file
+      # already set use_mlock: false explicitly, so this override is
+      # only a fallback for any future model added without that key.
+      # Set to true only after verifying steady-state RSS under load.
+      use_mlock: false
+    gpu_8gb:
+      n_parallel: 2
+
+  custom_profiles: {}
+  uma_gtt_offload: false
+
+# ════════════════════════════════════════════════════════════════════════════════
+# 🖥️ GPU ANALYZER — Compute estimates and thermal limits
+# ════════════════════════════════════════════════════════════════════════════════
+# Passed to: GPUAnalyzer(config=cfg["gpu_analyzer"])
+gpu_analyzer:
+  default_fp32_tflops: 10.0
+  default_mem_bw_gbps: 200.0
+  default_l2_cache_mb: 4.0
+  default_pcie_gen: 4
+  default_pcie_lanes: 16
+  default_pcie_bw_gbps: 16.0
+  default_ram_bw_gbps: 50.0
+  thermal_throttle_temp_c: 85.0
+  cmd_timeout_s: 10
+  model_overrides: {}
+
+
+# ════════════════════════════════════════════════════════════════════════════════
+# ⚙️ SYSTEM — OS-level kernel tuning (requires root)
+# ════════════════════════════════════════════════════════════════════════════════
+# Passed to: SystemOptimizer(config=cfg["system"])
+system:
+  # allow_kernel_tuning: master switch for ALL host-level mutations done
+  # by the server (SystemOptimizer.apply_all + the NVMe sysctl block in
+  # model_loader._load_sync + the cpu_optimizer kernel module path).
+  #
+  # Default is now FALSE. Reasons (RCA K2):
+  #   * Two components (SystemOptimizer.tune_vm and
+  #     drive_pipeline.set_sysctl_for_nvme) wrote overlapping, mutually
+  #     exclusive sysctls (dirty_ratio ↔ dirty_bytes). Whichever ran last
+  #     won, and the restore-on-shutdown path wrote back whichever
+  #     "original" it recorded FIRST — which for a crashed-then-restarted
+  #     run was the shadowed zero from the previous conflict. Net effect
+  #     on the host: vm.dirty_ratio ended up 0 (extremely aggressive
+  #     writeback throttling) instead of the kernel default 20.
+  #   * Huge pages (nr_hugepages=512 = 1 GiB) and RLIMIT_MEMLOCK were
+  #     being raised on every start.
+  #   * I/O scheduler was rewritten on every block device including loop*.
+  #   * cpu_optimizer tried to `make` + `insmod` a kernel module on every
+  #     start; failed every time (no Makefile shipped).
+  # None of this is required for inference. The hardware profile
+  # (apu_2gb) and the context planner size the workload from RAM/VRAM
+  # alone; the tuning above was optimising knobs nobody had measured.
+  #
+  # To re-enable, set this to true — but FIRST read the "Recommended
+  # operator settings" comment block below and consider applying the
+  # same values via /etc/sysctl.d/90-local-llm.conf and tuned/udev
+  # instead, so the host's restore path is systemd's, not this process's.
+  allow_kernel_tuning: false
+  venv_path: "/home/deve-oops/DEVE-BOX"
+
+  # ── Recommended operator settings (apply ONCE on the host) ──────────────
+  # If you want the same tuning this server used to apply at every start,
+  # do it outside the process so a crash cannot leave the host half-tuned:
+  #
+  #   /etc/sysctl.d/90-local-llm.conf:
+  #     vm.swappiness = 10
+  #     vm.vfs_cache_pressure = 50
+  #     vm.overcommit_memory = 1
+  #     # Choose EITHER ratio OR bytes for dirty limits — never both.
+  #     vm.dirty_ratio = 20              # or: vm.dirty_bytes = 268435456
+  #     vm.dirty_background_ratio = 5    # or: vm.dirty_background_bytes = 67108864
+  #     kernel.numa_balancing = 0
+  #
+  #   For CPU governor + I/O scheduler on the model's NVMe only:
+  #     systemctl enable --now tuned  (with a custom profile)
+  #   or a small udev rule:
+  #     ACTION=="add|change", KERNEL=="nvme0n1", ATTR{queue/scheduler}="mq-deadline"
+  #
+  # If you keep allow_kernel_tuning: true (NOT recommended), you MUST
+  # resolve the dirty_ratio-vs-dirty_bytes conflict before re-enabling —
+  # see RCA K2 items 1-3.
+  # ────────────────────────────────────────────────────────────────────────
+
+  enable_huge_pages: false             # was true (1 GiB reserved per start)
+  huge_pages:
+    auto_pct: 12.0
+    min_pages: 64
+    max_pages: 512
+    warn_threshold_pct: 15.0
+    info_threshold_pct: 10.0
+
+  enable_thp: false                    # was true — host default is fine
+  thp_mode: "madvise"
+
+  enable_cpu_governor: false           # was true — apply via tuned/udev
+  cpu_governor: "performance"
+
+  enable_io_scheduler: false           # was true — apply via udev to the
+                                       # model's NVMe only, not loop*
+  io_scheduler: "mq-deadline"
+
+  enable_memlock: false                # was true — RLIMIT_MEMLOCK handled
+
+  enable_vm_tune: false                # was true — the dirty_* conflict
+                                       # made this actively harmful
+  vm:
+    swappiness: 10
+    dirty_ratio: 40
+    dirty_background_ratio: 5
+    vfs_cache_pressure: 50
+    overcommit_memory: 1
+
+  cpu_optimizer:
+    # K1: this used to be true and produced an ERROR on every single
+    # start ("make: *** No targets specified and no makefile found") as
+    # the module was rebuilt (and failed) on every startup. It does not
+    # help llama.cpp inference and the .ko is not shipped in this repo.
+    enabled: false
+    core_mask: ""                      # only matters if enabled: true
+
+# ════════════════════════════════════════════════════════════════════════════════
+# 🚄 KERNELS — Custom accelerator backends
+# ════════════════════════════════════════════════════════════════════════════════
+# Passed to: UniversalKernelManager(config=cfg["kernels"])
+kernels:
+  # K3: the "kernels" subsystem monkey-patches PyTorch ops with custom
+  # HIP/CUDA kernels. The GGUF (llama.cpp) inference path does not use
+  # PyTorch at all — these patches only affect the transformers/HF path,
+  # which this deployment does not use for qwen3-8b. They are extra
+  # native code loaded into the process for no measurable benefit here,
+  # on a GPU (gfx902 Picasso/Raven) that is not an officially supported
+  # ROCm target. Every native crash from this path lands in
+  # /var/lib/local-llm/crash.log (faulthandler), NOT in the server log,
+  # which makes it a silent failure mode.
+  #
+  # Set to false until the custom kernels are benchmarked to actually
+  # help on this specific hardware. If your deployment uses the
+  # transformers/BitNet path and the kernels help there, set true —
+  # but re-test after any torch/ROCm upgrade.
+  #
+  # NOTE: the manager class (UniversalKernelManager in
+  # local_llm_core.engine.kernels.manager) is invoked unconditionally in
+  # InferenceEngine.__init__ — it does not currently read this config key.
+  # After restart, verify with:
+  #   journalctl -u local-llm-cloud --since "2 minutes ago" | grep -E \
+  #     "Custom kernels backend activated|PyTorch ops patched"
+  # If those lines STILL appear, the manager isn't respecting this key
+  # and needs to be gated in inference_engine.py — report back and we'll
+  # add the guard (requires touching inference_engine.py's __init__,
+  # which we're deferring until we see the log).
+  enabled: false
+  auto_select: true
+  force_backend: null                  # cuda | hip | metal | vulkan | cpu
+  cpu_optimizer:
+    enabled: false
+    core_mask: ""
+
+
+# ════════════════════════════════════════════════════════════════════════════════
+# 🧠 MEMORY — VRAM, RAM, SSD swap, and hybrid caching
+# ════════════════════════════════════════════════════════════════════════════════
+# Passed to: VRAMManager, RAMOptimizer, SwapHandler, HybridManager
+memory:
+  # NOTE: use_mlock (see hardware_profiles.py) needs the process's memlock
+  # ulimit raised, or it'll warn and continue unlocked rather than fail
+  # startup. If running under systemd, add to the unit: LimitMEMLOCK=infinity
+  # If running from a shell: ulimit -l unlimited (as root, or via
+  # /etc/security/limits.conf)
+
+  # ── Top-level (server + core read these) ────────────────────────────────
+  vram_utilization_target: 0.95
+  ram_utilization_target: 0.75
+  compression_enabled: true
+  ssd_swap_path: "/var/lib/local-llm/swap"
+  ssd_swap_max_gb: 32
+  gc_interval_s: 60.0
+  gc_on_memory_pressure: true
+  # ram_target: 0.85 # DEPRECATED — use ram_utilization_target above
+
+  # ── VRAM Manager (core reads cfg["memory"]["vram"]) ─────────────────────
+  vram:
+    vram_target_utilization: 0.95
+    vram_defrag_threshold: null        # null = auto-scale
+    vram_history_window: 256
+    vram_prefetch_alpha: 0.1
+    vram_defrag_check_interval_s: 60.0
+    vram_allocation_retries: 3
+
+  # ── RAM Optimizer (core reads cfg["memory"]["ram"]) ─────────────────────
+  ram:
+    ram_max_mb: 0                      # 0 = auto (70% of available)
+    ram_compress_ratio_threshold: 0.85
+    ram_max_mmaps: 64
+    ram_max_prefetch_concurrent: 16
+
+  # ── SSD Swap Handler (core reads cfg["memory"]["swap"]) ─────────────────
+  swap:
+    ssd_swap_path: "/var/lib/local-llm/swap"
+    ssd_swap_max_gb: 32.0
+    ssd_compression_enabled: true
+    ssd_compression_level: 0           # 0 = fastest LZ4
+
+  # ── Hybrid Memory Manager (core reads cfg["memory"]["hybrid"]) ───────────
+  hybrid:
+    ssd_path: "/var/lib/local-llm/hybrid"
+    ssd_max_gb: 20.0
+    compression_enabled: true
+    promotion_threshold: 0.95
+
+  # ── Hybrid Layer Cache (core reads cfg["memory"]["hybrid_cache"]) ────────
+  hybrid_cache:
+    ram_budget_mb: 512
+    nvme_budget_mb: 5000
+    promote_threshold_per_min: 2.0
+    demote_threshold_per_min: 0.5
+    rebalance_interval_s: 60.0
+    ram_pressure_threshold: 0.90
+    ewma_alpha: 0.1
+
+  # ── SQLite Connection Pool (core reads cfg["memory"]["sqlite"]) ──────────
+  sqlite:
+    db_path: "/home/deve-oops/AMB-OPT/local-llm-cloud/tmp/llm_keys.db"
+    max_connections: 10
+    connection_timeout_s: 5.0
+
+concurrency:
+  # ─────────────────────────────────────────────────────────────────────
+  # POOL SIZING
+  #
+  # The pool does NOT dynamically spawn workers. `initial_workers` is
+  # how many processes are started at boot and that number is fixed for
+  # the lifetime of the server. Set it to the concurrency you want to
+  # serve.
+  #
+  # `max_workers` is a HARD CEILING enforced by MemoryLedger; the pool
+  # will refuse to start `initial_workers` if the ledger computes that
+  # the machine cannot hold that many KV caches + runtimes at once. The
+  # ledger's math: min(mem_ceiling, bandwidth_ceiling, cpu_ceiling).
+  #
+  # On your current box (4C/8T, 13.8 GB, single-channel DDR4-2400):
+  #   mem_ceiling ≈ 6 workers (13.8 GB RAM - 4.8 GB weights - 1 GB reserve)
+  #                / (642 MB KV + 300 MB runtime)
+  #   bw_ceiling  ≈ 2 workers (12.5 GB/s measured) / (4.8 GB × 1 tps)
+  #   cpu_ceiling = 2 workers (4 physical cores / 2)
+  #   ⇒ max_workers = 2
+  #
+  # `initial_workers: 2` matches the ledger and is safe. If the ledger
+  # returns a smaller number (denser model, more RAM pressure), the
+  # pool will spawn fewer and log the reason at boot.
+  # ─────────────────────────────────────────────────────────────────────
+  mode: "process_pool"                 # process_pool | single_process | micro_batch
+  initial_workers: 2
+  max_workers: 0                       # 0 = MemoryLedger decides from RAM+BW+CPU
+  heartbeat_s: 0.5
+  respawn_backoff: [1, 2, 4, 8, 30]
+  max_respawns_per_5min: 3
+  global_queue_max: 256
+  ram_refuse_pct: 90
+  target_min_tps_per_worker: 1.0       # per-worker decode floor before we stop scaling
+  os_reserve_mb: 1024
+  runtime_per_worker_mb: 300
+  affinity_prefix_weight: 1.0
+  affinity_thermal_weight: 0.5
+  affinity_staleness_weight: 1.0
+  throttle_start_c: 85.0
+  micro_batch_enabled: false           # honoured only if llama-cpp-python exposes batch API
+
+# ════════════════════════════════════════════════════════════════════════════════
+# 🚀 INFERENCE — Model generation parameters and timeouts
+# ════════════════════════════════════════════════════════════════════════════════
+# Passed to: InferenceEngine(config=cfg["inference"])
+inference:
+  batch_size: 1
+  default_temperature: 0.7
+  default_top_p: 0.95
+  default_top_k: 40
+  # ── Generation policy (0 = unlimited; -1 = auto; no token-count caps) ──
+  default_max_tokens: 0
+  long_request_threshold_tokens: -1     # auto: n_ctx//4 at request time
+  default_stop: [ ]
+  segment_size: 512
+  max_segments: 0                       # 0 = unlimited segments
+  health_check_interval_segments: 1
+
+  # ── Streaming / heartbeat ──────────────────────────────────────────────
+  chunked_prefill: true
+  heartbeat_interval_s: 5.0
+  chunked_prefill_min_tokens: 256
+  # Minimum tokens per prefill chunk. Cancel latency = one chunk's worth
+  # of native work = chunk_min / measured_tps seconds. At the ~5 tok/s
+  # prefill rate measured on this box, 16 gives ≤3.2 s worst-case cancel
+  # latency; raising to 32 doubles worst-case latency but halves per-chunk
+  # native-call overhead. Tune up if prefill is throughput-bound; tune
+  # down if cancellation feels sluggish.
+  chunked_prefill_chunk_min: 16
+  chunked_prefill_chunk_max: 256
+  chunked_prefill_chunk_seconds: 3.0
+
+  # ── Anti-repetition sampling (production-grade) ────────────────────────
+  presence_penalty: 1.0
+  frequency_penalty: 0.2
+  repeat_penalty: 1.05
+  penalty_apply_only_when_sampling: true
+
+  # ── Loop guards (semantic termination) ─────────────────────────────────
+  loop_guard_enabled: true
+  loop_guard_min_cover: 800
+  loop_guard_window: 8000
+  loop_guard_check_every: 48
+  loop_guard_line_min_chars: 40
+  loop_guard_line_repeats: 3
+  loop_guard_heading_min_chars: 12
+  loop_guard_heading_repeats: 3
+  loop_guard_shingle_n: 8
+  loop_guard_shingle_window: 6000
+  loop_guard_shingle_ratio: 0.45
+  loop_guard_shingle_min_words: 600
+
+  # ── Second-layer guard ("asks user, then answers itself") ──────────────
+  solicitation_guard_enabled: true
+  solicitation_grace_tokens: 64
+  solicitation_min_arm_tokens: 256
+  solicitation_families: [ ]
+
+  # Operator backstop on TOTAL generated tokens per request (RCA S5).
+  # Was 0 = unlimited; any client could request max_tokens: 0 and hold
+  # the single inference slot until they disconnected. 16384 is a hard
+  # ceiling that no request can exceed regardless of what max_tokens the
+  # client sends (the engine enforces it inside _generate_segmented and
+  # _continuous_tokens — see engine code for both code paths).
+  # 16384 tokens is 2× the model's 8K context window, so a single reply
+  # can always complete after a full-length prompt. At 3 tok/s that's
+  # ~90 min, at 7 tok/s ~40 min — bounded by default_timeout_s (3600s,
+  # above) long before this kicks in, but present as belt-and-braces.
+  # Set higher only for multi-tenant deployments with explicit quotas.
+  max_total_tokens: 16384
+
+  # ── Streaming timeouts ────────────────────────────────────────────────
+  first_token_timeout_floor_s: 120.0
+  first_token_timeout_multiplier: 3.0
+  inter_token_stall_s: 60.0
+  prefill_ewma_alpha: 0.05
+  min_response_tokens: 64
+  # default_timeout_s (RCA S5): was 0 = unlimited. That means a client
+  # could send max_tokens: 0 (unlimited) and hold the single inference
+  # slot for hours at 3-7 tok/s — every other request queued behind it.
+  # 3600 = 1 hour of wall clock per request. At 7 tok/s that's ~25K
+  # tokens; at 3 tok/s ~10K tokens. Both are far beyond any real reply
+  # (the auto-continuation + loop guards usually terminate well before),
+  # but bounded. Tune up if your workload legitimately needs longer
+  # generations and you accept the single-slot tradeoff.
+  default_timeout_s: 3600
+
+  suppress_thinking: true
+  reasoning_budget_tokens: 4000
+  thinking_indicator_enabled: true
+
+  # AIMD adaptive concurrency
+  aimd_target_tps: 3.5
+  aimd_min_batch: 1
+  aimd_max_batch: 4
+  aimd_adjust_interval_s: 5.0
+  max_concurrent_requests: 4
+
+  # Engine internals
+  max_batch_size: 4
+  target_tps: 3.5
+  rate_limit_rps: 100.0
+  rate_limit_max_keys: 1000
+  context_safety_tokens: 256
+  circuit_breaker_failure_threshold: 5
+  circuit_breaker_recovery_s: 60.0
+  autotune_interval_s: 300.0
+  min_executor_workers: 1
+  executor_max_queue: 64
+  metrics_history_size: 500
+  context_cache_bytes: 268435456     # 256 MiB
+  context_cache_prefix_len: 512
+  ngram_n: 4
+  ngram_max_size: 50000
+  request_queue_maxsize: 2000
+
+  # Throughput optimizer (speculative decoding)
+  # Throughput optimizer — must match the top-level
+  # `throughput_optimizer.enabled`. Top level is authoritative; this key
+  # exists only for schema backward compat.
+  throughput_optimizer: false
+  draft_model_id: "qwen3-0.6b"
+  target_model_id: "qwen3-8b"
+  spec_k: 8
+  kv_cache_max_gb: 10.0
+
+
+  # BitNet-specific adaptive parameters
+  bitnet:
+    adaptive_timeouts: true
+    calibration_tokens: 2
+    logit_clip_sigma: 5.0
+    softmax_floor: 1.0e-9
+
+
+# ════════════════════════════════════════════════════════════════════════════════
+# 📋 SCHEDULER — Request queuing, AIMD, fairness, preemption
+# ════════════════════════════════════════════════════════════════════════════════
+# Passed to: Scheduler(config=cfg["scheduler"])
+scheduler:
+  aimd_target_tps: 3.5
+  aimd_min_batch: 1
+  aimd_max_batch: 4
+  aimd_interval_s: 5.0
+  aimd_hysteresis: 2
+  aimd_high_margin: 0.95
+  aimd_low_margin: 0.85
+  max_queue_per_priority: 64
+  max_total_queue: 256
+  default_timeout_s: 720.0           # Match inference.default_timeout_s
+  prune_interval_s: 10.0
+
+  fairness_weights:
+    low: 1
+    normal: 2
+    high: 4
+    urgent: 8
+
+  preemption:
+    persist_dir: null                  # null = in-memory only
+
+
+# ════════════════════════════════════════════════════════════════════════════════
+# 💾 DRIVE PIPELINE — NVMe-backed inference accelerators
+# ════════════════════════════════════════════════════════════════════════════════
+# Passed to: DrivePipeline(config=cfg["drive_pipeline"])
+drive_pipeline:
+  target_vram_pct: 0.95
+  target_ram_pct: 0.75
+  target_tps: 3.5
+  cpu_thread_ratio: 0.5
+  use_madvise: true
+  use_direct_io: false
+  model_dir: "/home/deve-oops/models"
+  swap_dir: "/var/lib/local-llm/llm_swap"
+  cpu_thread_limit: 0
+
+  context_cache:
+    max_bytes: 268435456               # 256 MiB
+    prefix_len: 512
+
+  layer_prefetcher:
+    prefetch_depth: 3
+    max_cache_bytes: 2147483648        # 2 GiB
+    max_workers: 2
+
+  cpu_throttler:
+    thread_ratio: 1.0      # match apu_2gb's profile — use all physical cores
+    thread_limit: 0        # 0 = derive from ratio above
+
+  concurrency:
+    initial_capacity: 1
+
+  throughput_controller:
+    target_tps: 8.0
+    min_batch: 1
+    max_batch: 32
+    window_sec: 300.0
+
+  nvme_advisor:
+    ram_threshold: 0.70
+
+  memory_pressure:
+    vram_target_pct: 0.95
+    ram_target_pct: 0.75
+
+  sysctl:
+    dirty_bytes: 268435456             # 256 MiB
+    dirty_background_bytes: 67108864   # 64 MiB
+    vfs_cache_pressure: 50
+    numa_balancing: 0
+
+
+# ════════════════════════════════════════════════════════════════════════════════
+# 🔀 LAYER STREAMER — Fractional Layer Pipeline / OOM recovery
+# ════════════════════════════════════════════════════════════════════════════════
+# Passed to: LayerStreamer(config=cfg["layer_streamer"])
+layer_streamer:
+  vram_overhead_mb: 80
+  layer_overcommit_factor: 1.05
+  oom_max_attempts: 5
+  oom_layer_reduction_factor: 0.75
+  ctx_reduction_steps: [1, 2, 4]
+  min_context: 256
+  last_n_tokens_size: 2048
+
+  # ── Phase 2 additions ────────────────────────────────────────────────
+  # n_threads_batch: computed at load time from physical core count. Do
+  # not set here — this file is the source of truth for user-intent, but
+  # thread counts must follow hardware. The model_loader writes the
+  # derived value into layer_streamer.n_threads_batch at runtime.
+  #
+  # prompt_lookup_enabled: prompt-lookup speculative decoding. Zero extra
+  # memory. Best for agent/tool-call workloads that repeat prompt text
+  # in the output. Disable only if the workload is pure creative prose.
+  prompt_lookup_enabled: false
+  prompt_lookup_num_tokens: 2
+
+# ════════════════════════════════════════════════════════════════════════════════
+# ⚡ THROUGHPUT OPTIMIZER — Continuous batching
+# ════════════════════════════════════════════════════════════════════════════════
+# Passed to: ThroughputOptimizer(config=cfg["throughput_optimizer"])
+
+# SINGLE AUTHORITATIVE SWITCH. The `inference.throughput_optimizer` key in
+# the [inference] section is a legacy duplicate and MUST match this value.
+# Both are kept for config-schema backward compat, but at boot
+# api_server.py should assert they agree (see Phase 2 validation).
+throughput_optimizer:
+  enabled: false
+  max_batch_slots: 8
+  queue_depth: 64
+  kv_cache_priority_boost_enabled: true
+  kv_cache_priority_boost: 10
+
+
+# ════════════════════════════════════════════════════════════════════════════════
+# 💡 NVME KV CACHE — Persistent prompt-prefix cache
+# ════════════════════════════════════════════════════════════════════════════════
+# Passed to: NVMeKVCache(config=cfg["nvme_kv_cache"])
+nvme_kv_cache:
+  enabled: true
+  dir: "/var/lib/local-llm/kv_cache"
+  max_size_gb: 10.0
+  max_entries: 0                       # 0 = unlimited
+  prefix_len: 512
+
+
+# ════════════════════════════════════════════════════════════════════════════════
+# 🔮 SPECULATIVE DECODING — Draft + target model acceleration
+# ════════════════════════════════════════════════════════════════════════════════
+# Passed to: SpeculativeEngine(config=cfg["speculative"])
+speculative:
+  enabled: false
+  draft_model_id: "qwen3-0.6b"
+  target_model_id: "qwen3-8b"
+  k: 8
+  min_k: 3
+  max_k: 16
+  adaptive_k: true
+  top_p: 0.9
+  acceptance_target_high: 0.75
+  acceptance_target_low: 0.50
+  draft_timeout_s: 30.0
+  verify_timeout_s: 60.0
+  max_fallback_retries: 5
+  enable_exact_verification: false
+  draft_repo: "Qwen/Qwen3-0.6B-GGUF"
+  draft_filename: "Qwen3-0.6B-Q8_0.gguf"
+  draft_size_mb: 310
+  vocab_size: 151936
+
+
+# ════════════════════════════════════════════════════════════════════════════════
+# 🖥️ MULTI-GPU — Tensor parallelism
+# ════════════════════════════════════════════════════════════════════════════════
+# Passed to: TensorParallel(config=cfg["multi_gpu"])
+multi_gpu:
+  enabled: true
+  strategy: "auto"                     # auto | even | manual | disabled
+  manual_ratios: null
+  exclude_gpu_ids: []
+  min_free_vram_mb: 512
+  bandwidth_weight: 0.5
+
+
+# ════════════════════════════════════════════════════════════════════════════════
+# 🤖 MODELS — GGUF and BitNet profiles, autoloading, security
+# ════════════════════════════════════════════════════════════════════════════════
+# Passed to: ModelLoader(config=cfg) and BitNetLoader(config=cfg["models"])
+models:
+  allowed_dir: "/home/deve-oops/models"
+  autoload_all: false
+  autoload_timeout_s: 900.0
+  warmup_enabled: true
+  warmup_prompt: "Hello"
+  warmup_tokens: 10
+  warmup_timeout_s: 30.0
+  cache_loaded_models: true
+
+  profiles:
+    # ── Qwen3 8B — primary model ────────────────────────────────────────────
+    - id: "qwen3-8b"
+      path: "/home/deve-oops/models/Qwen3-8B-Q4_K_M.gguf"
+      format: "gguf"
+      description: "Qwen3 8B (Q4_K_M) — best quality on limited VRAM"
+      autoload: true
+      model_type: "gguf"
+      quantization: "Q4_K_M"
+      context_length: 0
+      num_gpu_layers: -1
+      n_threads: 0
+      use_mlock: false
+      rope_scaling: 1.0
+      gpu_split: null
+      priority: 10
+      ram_required_mb: 4800
+      suppress_thinking: null
+      tags: ["chat", "code", "primary"]
+
+    # ── Qwen3 4B — primary model ────────────────────────────────────────────
+    - id: "qwen3-4b"
+      path: "/home/deve-oops/models/Qwen3-4B-Q4_K_M.gguf"
+      format: "gguf"
+      description: "Qwen3 4B (Q4_K_M) — best quality on limited VRAM"
+      autoload: false
+      model_type: "gguf"
+      quantization: "Q4_K_M"
+      context_length: 0
+      num_gpu_layers: -1
+      n_threads: 0
+      use_mlock: false
+      rope_scaling: 1.0
+      gpu_split: null
+      priority: 10
+      ram_required_mb: 4800
+      suppress_thinking: null
+      tags: [ "chat", "code", "primary" ]
+
+    # ── Qwen3 0.6B — draft model for speculative decoding ──────────────────
+    - id: "qwen3-0.6b"
+      path: "/home/deve-oops/models/Qwen3-0.6B-Q8_0.gguf"   # download from Qwen/Qwen3-0.6B-GGUF
+      format: "gguf"
+      description: "Qwen3 0.6B — fast draft model (download before enabling)"
+      autoload: false                                            # set true only after downloading
+      model_type: "gguf"
+      quantization: "Q8_0"
+      context_length: 0  # 0 for unlimited else 8192
+      num_gpu_layers: -1
+      n_threads: 0
+      use_mlock: false
+      rope_scaling: 1.0
+      gpu_split: null
+      priority: 8
+      suppress_thinking: true
+      tags: ["draft", "fast"]  #  ["small", "fast"]
+
+    # ── Llama 3.2 1B — fast fallback ───────────────────────────────────────
+    - id: "llama3.2-1b"
+      path: "/home/deve-oops/models/llama-3.2-1b-instruct-q4_k_m.gguf"   # download before enabling
+      format: "gguf"
+      description: "Llama 3.2 1B — fastest standalone (download before enabling)"
+      autoload: false                                                        # set true only after downloading
+      model_type: "gguf"
+      quantization: "Q4_K_M"
+      context_length: 8192
+      num_gpu_layers: -1
+      n_threads: 0
+      use_mlock: false
+      rope_scaling: 1.0
+      gpu_split: null
+      priority: 5
+      suppress_thinking: false
+      tags: ["fast", "small", "fallback"]
+
+    # ── BitNet GGUF (pre-converted i2_s) — bitnet.cpp path, fastest ────────
+    # This file already exists at /home/deve-oops/models/ — RAM usage
+    # ~800 MB via mmap once loaded by BitNet.cpp.
+    #
+    # PRODUCTION FIX: the previous comment here ("model_type: 'gguf' routes
+    # through ModelLoader → llama-cpp-python which can load i2_s GGUF files
+    # directly") was wrong. llama-cpp-python (mainline llama.cpp) does NOT
+    # implement the I2_S/TL1/TL2 ternary kernels — those exist only in
+    # Microsoft's BitNet.cpp fork. Loading this file via plain
+    # llama-cpp-python fails (see layer_streamer.py's classified error).
+    # `model_type` here is informational only — model_loader.py routes by
+    # *detecting the GGUF's actual quantization* (classify_gguf in
+    # model_unified_env.py), not by this field. Set to "bitnet" to reflect
+    # that accurately. To make this load successfully, build BitNet.cpp:
+    #   cd /home/deve-oops/AMB-OPT/BitNet && python setup_env.py \
+    #     -md /home/deve-oops/models/BitNet-b1.58-2B-4T -q i2_s
+    # ModelLoader will then find the resulting llama-server/llama-cli
+    # binary automatically (it searches ~/AMB-OPT/BitNet/build/bin).
+    - id: "bitnet-gguf"
+      path: "/home/deve-oops/models/ggml-model-i2_s.gguf"
+      tokenizer_path: "/home/deve-oops/models/BitNet-b1.58-2B-4T"
+      format: "gguf"
+      description: "BitNet pre-converted GGUF (i2_s) — loaded via BitNet.cpp, ~800 MB RAM"
+      autoload: false
+      model_type: "bitnet"
+      quantization: "1bit"
+      context_length: 4096
+      device: "cpu"                           # BitNet ternary weights are always CPU-only
+      num_gpu_layers: 0                       # 0 = CPU-only (no GPU offload for BitNet weights)
+      n_threads: 0                            # 0 = auto-detect physical cores (from ATLAS)
+      use_mlock: false
+      rope_scaling: 1.0
+      gpu_split: null
+      priority: 10
+      ram_required_mb: 800                    # ~800 MB via mmap (much less than transformers path)
+      suppress_thinking: false
+      use_flash_attention_2: false            # not supported on CPU bitnet.cpp path
+      prompt_format: "bitnet"                  # PRODUCTION FIX: was "phi3" — confirmed wrong.
+                                               # BitNet-b1.58-2B-4T uses Llama-3 tokenizer
+                                               # (BOS=<|begin_of_text|>, EOT=<|eot_id|>).
+                                               # Using phi3 format caused self-generating
+                                               # conversation loops and stop-token failures.
+      tags: ["bitnet", "efficient", "1bit", "cpu", "gguf", "pre-converted"]
+
+    # ── BitNet b1.58 2B4T — packed model (transformers path) ───────────────
+    # BUG 5 FIX: This is the packed model directory (BitNetForCausalLM arch,
+    # U8 ternary weights). It CANNOT be converted by convert-hf-to-gguf-bitnet.py
+    # (UNSUPPORTED_ARCHITECTURES in bitnet_setup.sh). Two valid load paths:
+    #   A) transformers: needs pinned commit 096f25ae (BitLinear layers)
+    #   B) bitnet.cpp:   use the bf16 variant (microsoft/bitnet-b1.58-2B-4T-bf16)
+    #      and run bitnet_setup.sh --model-source 1 to convert + build
+    # autoload: false — use bitnet-gguf profile above for production.
+    # Set autoload: true only after confirming the pinned transformers commit is installed.
+    - id: "bitnet-packed"
+      path: "/home/deve-oops/models/BitNet-b1.58-2B-4T"
+      format: "bitnet"
+      description: "BitNet b1.58 2B4T — packed model (needs pinned transformers commit OR bf16 variant for bitnet.cpp)"
+      autoload: false                          # BUG 5 FIX: keep off until transformers commit confirmed
+      model_type: "bitnet"
+      quantization: "1bit"
+      context_length: 8192
+      device: "cpu"                            # BitNet ternary weights are always CPU-only
+      num_gpu_layers: 0
+      n_threads: 0
+      use_mlock: false
+      rope_scaling: 1.0
+      gpu_split: null
+      priority: 5
+      ram_required_mb: 3000                    # transformers path needs ~3 GB RAM
+      suppress_thinking: false
+      use_flash_attention_2: false             # flash_attn usually not installed
+      prompt_format: "phi3"                    # bitnet-b1.58 uses phi-3 chat template
+      tags: ["bitnet", "efficient", "1bit", "cpu", "packed", "transformers"]
+
+
+# ════════════════════════════════════════════════════════════════════════════════
+# 🏗️ MODEL LOADER — VRAM budget, timeouts, circuit breaker
+# ════════════════════════════════════════════════════════════════════════════════
+# Passed to: ModelLoader(config=cfg) — reads cfg["model_loader"]
+model_loader:
+  load_timeout_s: 600.0
+  shutdown_timeout_s: 10.0
+  min_vram_budget_mb: 100
+
+  # ── Context-size planner ─────────────────────────────────────────────
+  # The loader now sizes n_ctx from real GGUF metadata (n_layer, n_kv_heads,
+  # head_dim, head_dim_v) × the KV quantization × a RAM budget, capped by
+  # the model's trained window. These three knobs control that plan.
+  #
+  # kv_ram_share: fraction of *available* system RAM the KV cache may use.
+  #   0.35 works well on a 6 GB-free APU. Lower it (e.g. 0.20) if weights
+  #   fight for RAM; raise it (e.g. 0.50) on a box where KV dominates.
+  # min_context_tokens: hard floor. The planner never returns less than this
+  #   even when RAM is tight. On APU profiles the hardware profile's own
+  #   context_length also serves as a floor via max(profile_ctx, this).
+
+  # max_context_tokens: hard ceiling for the context planner.
+  # 0 = unbounded → the model's trained window (40960 for Qwen3-8B — see
+  # the load log: `chosen=40960 (mc.context_length=0)`). On this 4C/8T box
+  # with ~5 tok/s prefill, 40960 tokens of prefill takes hours per fresh
+  # prompt — unusable in practice. 8192 caps that at ~25 min worst-case
+  # while still allowing long conversations. Raise only after measuring
+  # higher prefill throughput on this hardware.
+  kv_ram_share: 0.35
+  min_context_tokens: 4096
+  max_context_tokens: 8192 # 0 unlimited
+  vram_safety_margin_mb: 50         # was 500 (designed for large GPUs)
+  vram_runtime_overhead_mb: 100     # was 300 (designed for large GPUs)
+  vram_system_prompt_overhead_mb: 50  # was 100 (designed for large GPUs)
+
+  circuit_breaker:
+    failure_threshold: 3
+    recovery_timeout_s: 60.0
+
+
+# ════════════════════════════════════════════════════════════════════════════════
+# ♻️ MODEL LIFECYCLE — Automatic load/unload and eviction
+# ════════════════════════════════════════════════════════════════════════════════
+# Passed to: ModelLifecycleManager(config=cfg["model_lifecycle"])
+model_lifecycle:
+  max_loaded_models: 8
+  idle_timeout_s: 1800.0              # 30 minutes
+  vram_target_utilization: 0.90
+  ram_target_utilization: 0.75
+  eviction_policy: "lru"              # lru | priority
+  auto_evict_on_pressure: true
+  check_interval_s: 15.0
+  autoload_all: false
+
+
+# ════════════════════════════════════════════════════════════════════════════════
+# ⚛️ BITNET — 1-bit LLM global settings
+# ════════════════════════════════════════════════════════════════════════════════
+# Passed to: BitNetLoader(config=cfg["bitnet"])
+bitnet:
+  enabled: false
+  default_quantization: "1bit"
+  use_custom_kernels: true
+  auto_detect_kernel_backend: true
+  force_kernel_backend: null           # cuda | rocm | metal | cpu
+  memory_fraction: 0.9
+  enable_speculative_decoding: false   # Disabled — bitnet.cpp handles this natively
+  enable_context_caching: true
+  max_loaded_models: 2
+  load_retries: 3
+  fallback_to_cpu_on_oom: true
+  # "bitnet" (packed model that couldn't autoload). Now points to
+  # "bitnet-gguf" — the pre-converted GGUF profile that works immediately via
+  # bitnet.cpp with no transformers dependency.
+  default_model_id: "bitnet-gguf"
+  profiles: []                         # Empty — uses models.profiles entries with format: bitnet
+
+  # bitnet.cpp backend settings (used when llama-server binary is found)
+  bitnet_cpp_port: 18080
+  bitnet_n_threads: 0                  # 0 = auto-detect physical cores
+  bitnet_n_gpu_layers: 0              # 0 = CPU-only (fastest for BitNet ternary weights)
+  bitnet_force_backend: null           # transformers | bitnet_cpp | null
+
+
+# ════════════════════════════════════════════════════════════════════════════════
+# 🛡️ CIRCUIT BREAKER — Failure detection and recovery
+# ════════════════════════════════════════════════════════════════════════════════
+# Passed to: InferenceEngine and ModelLoader (reads cfg["circuit_breaker"])
+circuit_breaker:
+  inference_enabled: true
+  inference_failure_threshold: 10
+  inference_error_rate: 0.5
+  inference_recovery_s: 60.0
+  count_timeouts_as_failures: false
+
+  loader_enabled: true
+  loader_failure_threshold: 3
+  loader_recovery_s: 60.0
+
+  health_timeout_s: 5.0
+
+
+# ════════════════════════════════════════════════════════════════════════════════
+# 💬 CONVERSATION — Chat history persistence
+# ════════════════════════════════════════════════════════════════════════════════
+conversation:
+  enabled: true
+  storage: "postgresql"
+
+  sqlite_path: "/home/deve-oops/AMB-OPT/local-llm-cloud/tmp/llm_conversations.db"
+
+  host: "localhost"
+  port: "5432"
+  database: "llm_conversations"
+  username: "amb_llm"
+  password: "${LLM_DB_PASSWORD}"
+
+  pool_size: 10
+  max_overflow: 5
+  pool_timeout: 30
+  pool_recycle: 3600
+
+  retry_attempts: 3
+  retry_backoff_base: 0.1
+  retry_jitter: true
+
+  max_conversations: 100
+  max_messages_per_conversation: 100
+  max_age_days: 7.0
+
+  write_buffer_size: 32
+  write_flush_interval: 0.05
+  enable_lease: true
+
+  adaptive_lru: true
+  min_conversations: 50
+
+  enable_background_prune: false
+  prune_interval_seconds: 3600
+
+
+# ════════════════════════════════════════════════════════════════════════════════
+# 📡 WEBSOCKET — Streaming connections
+# ════════════════════════════════════════════════════════════════════════════════
+websocket:
+  send_timeout_sec: 2.0
+  max_payload_bytes: 65536
+  cleanup_interval_sec: 60.0
+  ping_interval_sec: 30.0
+  ping_timeout_sec: 5.0
+  max_connections: 100
+  max_connections_per_ip: 50
+  enable_metrics: true
+  backpressure_limit: 32
+  broadcast_concurrency: 10
+  idle_timeout_s: 120
+
+
+# ════════════════════════════════════════════════════════════════════════════════
+# 📊 MONITORING — Metrics, Prometheus, anomaly detection
+# ════════════════════════════════════════════════════════════════════════════════
+monitoring:
+  metrics_interval_s: 5.0
+  prometheus_enabled: false
+  prometheus_port: 9090
+  prometheus_addr: "127.0.0.1"
+
+  metrics:
+    sample_interval_sec: 5.0
+    history_size: 1200
+    prometheus_enabled: false
+    prometheus_port: 9090
+    anomaly_detection: true
+    anomaly_latency_z_threshold: 5.0
+    anomaly_temp_threshold_c: 85.0
+    anomaly_min_gpu_util_for_temp_alert: 10.0
+    gpu_temp_max_valid: 110.0
+    gpu_cache_ttl_sec: 5.0
+    adaptive_sampling: true
+    adaptive_sampling_max_factor: 4.0
+    adaptive_sampling_cpu_threshold: 80.0
+    file_export_enabled: false
+    file_export_path: "/tmp/llm_metrics.jsonl"
+
+  telemetry:
+    collect_interval_sec: 5.0
+    history_requests: 10000
+    history_resources: 1440
+    prometheus_enabled: false
+    prometheus_port: 9090
+    anomaly_window_size: 100
+    anomaly_z_threshold: 3.0
+    predictive_alpha: 0.3
+    predictive_beta: 0.1
+    predictive_k: 3.0
+    file_export_enabled: false
+    file_export_path: "/tmp/llm_telemetry.jsonl"
+    thresholds:
+      vram_utilization: 0.98
+      ram_utilization: 0.95
+      gpu_temp_c: 85
+      latency_p99_ms: 5000
+    auto_unload:
+      enabled: false
+      idle_threshold_seconds: 1800.0
+      check_interval_seconds: 60.0
+      pressure_vram_mb: null
+
+  performance:
+    sla_targets:
+      2gb:  { ttft_ms: 5000, tps: 3.5 }
+      8gb:  { ttft_ms: 1200, tps: 50.0 }
+      24gb: { ttft_ms: 400,  tps: 90.0 }
+    history_size: 1000
+    trend_window: 30
+    recommendation_threshold:
+      ttft_degradation_pct: 20
+      tps_degradation_pct: 20
+    history_db_path: null
+
+  model_telemetry:
+    rolling_window_size: 500
+    ema_alpha: 0.1
+    model_ranking:
+      recency_half_life: 300.0
+
+  log_buffer_size: 1000
+  ws_reaper_interval_s: 60.0
+  idle_model_timeout_s: 1800.0
+  idle_reaper_interval_s: 60.0
+  defrag_check_interval_s: 30.0
+  defrag_queue_threshold: 2
+  anomaly_detection_enabled: true
+  anomaly_z_score_threshold: 3.0
+  log_slow_requests_ms: 5000
+
+
+# ════════════════════════════════════════════════════════════════════════════════
+# 📝 LOGGING — Levels, file output, rotation, TUI handler
+# ════════════════════════════════════════════════════════════════════════════════
+logging:
+  level: "info"
+  file: "/home/deve-oops/AMB-OPT/local-llm-cloud/logs/llm_server.log"
+  file_max_mb: 100
+  file_backups: 3
+  # Phase 2c: logging.format controls the file handler output format.
+  #   "json" → JSONLogFormatter — one JSON object per line, with
+  #            request_id/key_id/path/status/latency_ms/tokens fields
+  #            when set via extra={}. Suitable for jq, Loki, ELK.
+  #   "text" → the human-readable format used since v1 (via
+  #            logging.Formatter with the pattern below).
+  #   "minimal" -> minimal logging formatter
+  # Note: the pattern below is only used when format="text". It has
+  # %(request_id)s in it, which requires install_request_id_filter
+  # to be called — it is, unconditionally, in create_app().
+  format: "minimal"
+  date_format: "%Y-%m-%d %H:%M:%S"
+  use_structlog: false
+
+  buffer_size: 1000
+  ws_queue_size: 512
+  max_msg_len: 4096
+  reaper_interval_sec: 60.0
+  broadcast_timeout_sec: 2.0
+  ws_client_idle_timeout_sec: 300.0
+  adaptive_sampling: true
+  adaptive_sampling_threshold: 50
+  adaptive_sampling_rate: 0.1
+  deduplication_window_sec: 2.0
+  overflow_file: "/var/lib/local-llm/log_overflow.jsonl"
+
+
+# ════════════════════════════════════════════════════════════════════════════════
+# 🔐 SECURITY — Input validation and path restrictions
+# ════════════════════════════════════════════════════════════════════════════════
+security:
+  max_prompt_length: 100000
+  max_messages: 100
+  validate_temperature: true
+  validate_top_p: true
+  validate_top_k_min: 1
+  validate_max_tokens_min: 0
+  verify_model_paths: true
+  symlink_resolution: "strict"
+  hash_keys: true
+  require_https_for_auth: false
+
+  # require_signed_sessions (RCA S7, Option B): when true (default),
+  # conversation sessions are signed HMAC tokens bound to the caller's
+  # API key. An unsigned X-Session-ID header is ignored — the request
+  # falls back to the signed llm_session cookie, or gets a fresh session.
+  # This closes the S7 hole: a caller who learns another caller's session
+  # id cannot use it, because the token cannot be forged for the wrong key.
+  #
+  # Set to false ONLY for single-tenant static-key deployments where:
+  #   * key_store_enabled: false, AND
+  #   * every caller shares the one static api.key, AND
+  #   * you genuinely need per-client sessions via unsigned headers.
+  # In that configuration there is one trust class, so the missing
+  # signature binding has no security impact — but any deviation from
+  # those three preconditions re-opens the hole. Leave at true unless
+  # you have specifically verified the preconditions.
+  require_signed_sessions: true
+
+  # allow_static_key_fallback (RCA 2b): when api.key_store_enabled is
+  # false AND api.key is set in this file, this flag controls whether
+  # requests authenticated with that static key are accepted.
+  #
+  # Default: false. The static-key path is removed from verify_api_key's
+  # hot path entirely. If key_store_enabled is false AND this is false,
+  # ALL requests are rejected with 403 — a deployment without a key store
+  # simply cannot authenticate anyone. That is the fail-closed default
+  # and what production should use.
+  #
+  # Set to true ONLY for single-tenant dev deployments where:
+  #   * key_store_enabled: false, AND
+  #   * api.key is set to a strong random value (NOT the placeholder),
+  #   * the server is bound to 127.0.0.1.
+  # Any other configuration re-opens the S1/S3 findings.
+  allow_static_key_fallback: false
+
+  # allow_no_auth (RCA 2b): the "no key store, no static key, no auth at
+  # all" state. Previously returned True (fail-OPEN) — every endpoint was
+  # publicly readable. Now defaults to false: the auth dependency returns
+  # 403 to every request when this state is reached.
+  #
+  # Set to true ONLY for local development where every client is trusted.
+  # Do not set this on any server reachable from another machine.
+  allow_no_auth: false
+
+# ════════════════════════════════════════════════════════════════════════════════
+# 🔄 SHUTDOWN — Graceful termination
+# ════════════════════════════════════════════════════════════════════════════════
+shutdown:
+  timeout_s: 30
+  engine_timeout_s: 30.0
+  close_websockets_first: true
+  flush_logs: true
+  close_databases: true
+
+
+# ════════════════════════════════════════════════════════════════════════════════
+# ⚖️ LOAD BALANCER — Multi-node distribution
+# ════════════════════════════════════════════════════════════════════════════════
+load_balancer:
+  strategy: "least_loaded"
+  health_check_interval_sec: 10.0
+  unhealthy_threshold: 3
+  recovery_threshold: 2
+  health_check_timeout_sec: 5.0
+  sticky_sessions: false
+  adaptive_rl_alpha: 0.2
+  adaptive_rl_gamma: 0.9
+  nodes: []
+
+
+# ════════════════════════════════════════════════════════════════════════════════
+# 🧪 DEBUG — Development flags (disable in production)
+# ════════════════════════════════════════════════════════════════════════════════
+debug:
+  enabled: false
+  request_id_length: 16
+  profile_slow_requests: false
+  profile_threshold_ms: 100
+  fake_model_enabled: false

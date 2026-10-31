@@ -1,0 +1,108 @@
+# pyproject.toml — local-llm-server
+# ---------------------------------------------------------------------------
+# Why hatchling instead of setuptools?
+#
+# Modern pip (>=21.3) uses PEP 517/660 for ALL installs, including
+# `pip install -e .`.  This completely bypasses setup.py cmdclass hooks
+# (PostInstallCommand / PostDevelopCommand), so install.sh never ran.
+#
+# Hatchling supports a first-class build hook API that fires on every
+# `pip install` — including editable mode — which is exactly what we need
+# to trigger install.sh automatically.
+#
+# setup.py is kept alongside this file so that:
+#   • The INSTALL_REQUIRES / EXTRAS_REQUIRE lists stay in one Python file
+#     (easier to maintain than duplicating in TOML).
+#   • `python setup.py develop` still works as a manual fallback.
+# ---------------------------------------------------------------------------
+
+[build-system]
+requires      = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name            = "local-llm-server"
+version         = "1.0.0"
+description     = "OpenAI-compatible REST API server for Local LLM Cloud"
+readme          = "README.md"
+license         = { text = "MIT" }
+authors         = [{ name = "Deveeelloopase" }]
+requires-python = ">=3.10"
+keywords        = ["llm", "inference", "openai", "api", "server"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS :: MacOS X",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
+]
+
+dependencies = [
+    "local-llm-core>=1.0.0",
+    "fastapi",
+    "uvicorn[standard]",
+    "python-multipart",
+    "websockets",
+    "pydantic",
+    "pyyaml",
+    "httpx",
+    "psutil",
+    "prometheus-client",
+    "aiosqlite",
+    "lz4",
+    "structlog",
+]
+
+[project.optional-dependencies]
+dev      = ["pytest", "pytest-asyncio", "pytest-cov",
+            "httpx", "mypy", "ruff", "black"]
+tui      = ["rich", "wcwidth", "click"]
+postgres = ["asyncpg"]
+mysql    = ["aiomysql"]
+all      = ["asyncpg", "aiomysql", "rich",
+            "wcwidth", "click"]
+full     = ["asyncpg", "aiomysql", "rich",
+            "wcwidth", "click",
+            "pytest", "pytest-asyncio", "pytest-cov",
+            "httpx", "mypy", "ruff", "black"]
+
+[project.urls]
+Source = "https://github.com/Deveeelloopase/Local-LLM"
+Issues = "https://github.com/Deveeelloopase/Local-LLM/issues"
+
+[project.scripts]
+local-llm-server   = "local_llm_server.__main__:main"
+llm-server         = "local_llm_server.__main__:main"
+llm-monitor        = "local_llm_server.monitoring.monitor:main"
+llm-server-install = "local_llm_server.cli.server_install_cmd:main"
+
+# ---------------------------------------------------------------------------
+# Hatchling — tell it where the package lives and what to include
+# ---------------------------------------------------------------------------
+[tool.hatch.build.targets.wheel]
+packages = ["local_llm_server"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "local_llm_server/",
+    "install.sh",
+    "config.yaml",
+    "local-llm-cloud.service",
+    "requirements.txt",
+    "README.md",
+    "DEPLOYMENT.md",
+]
+
+# ---------------------------------------------------------------------------
+# Build hook — runs install.sh after every `pip install` (including -e)
+# The hook lives in hatch_build.py next to this file.
+# ---------------------------------------------------------------------------
+[tool.hatch.build.hooks.custom]
+path = "hatch_build.py"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths    = ["tests"]

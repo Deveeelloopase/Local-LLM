@@ -1,0 +1,358 @@
+# config.example.yaml — Template for fresh installs.
+# install.sh copies this to /etc/local-llm/config.yaml on first install.
+# Secrets are read from /etc/local-llm/env via ${VAR} expansion.
+
+version: "1.0.0"
+
+power:
+  prevent_suspend: true
+
+server:
+  # Loopback by default. Put nginx/Caddy in front for TLS.
+  host: "127.0.0.1"
+  port: 8080
+  workers: 1
+  worker_timeout_s: 120
+  max_connections: 1000
+  backlog: 2048
+  max_body_size_mb: 4              # RCA S5
+  max_header_size_kb: 8
+  fail_fast_on_startup_error: true # RCA 4.2
+
+  tls:
+    enabled: false
+
+  cors_origins:
+    - "http://localhost:3000"
+    - "http://localhost:8080"
+  cors_allow_credentials: true
+
+  trusted_proxies:
+    - "127.0.0.1"
+
+api:
+  key: "${LLM_API_KEY}"
+  master_key: "${LLM_MASTER_KEY}"
+
+  key_store_enabled: true
+  storage: "postgresql"
+  key_store_allow_memory_fallback: false   # RCA N4
+
+  host: "localhost"
+  port: 5432
+  database: "llm_keys"
+  username: "amb_llm"
+  password: "${LLM_DB_PASSWORD}"
+
+  pool_size: 10
+  max_overflow: 5
+  pool_timeout: 30
+  pool_recycle: 3600
+
+  ip_rate_limit:
+    enabled: true
+    rps: 50.0
+    capacity: 100.0
+    bypass_localhost: true
+
+  admin_rate_limit:
+    max_requests_per_hour: 1000
+
+security:
+  require_signed_sessions: true
+  allow_static_key_fallback: false   # RCA 2b
+  allow_no_auth: false                # RCA 2b
+  max_prompt_length: 100000
+  max_messages: 100
+  verify_model_paths: true
+  symlink_resolution: "strict"
+  hash_keys: true
+  require_https_for_auth: false
+
+hardware:
+  auto_detect: true
+  preferred_backend: "hip"
+  detection_timeout_s: 30.0
+  cmd_timeout_s: 5
+
+hardware_profiles:
+  force_profile: null
+  detection_thresholds:
+    apu_4gb_min_mb: 3073
+    gpu_4gb_max_mb: 5119
+    gpu_6gb_max_mb: 7167
+    gpu_8gb_max_mb: 10239
+    gpu_12gb_max_mb: 14335
+    gpu_16gb_max_mb: 20479
+  overrides:
+    apu_2gb:
+      context_length: 4096
+      target_tps: 3.0
+      n_batch: 2048
+      n_parallel: 1
+      context_vs_layers_priority: "layers"  # RCA N1
+      kv_cache_quant: "q8_0"                # RCA Q4
+      speculative_decoding: false           # RCA Q6
+      use_mlock: false                      # RCA Q3
+
+system:
+  allow_kernel_tuning: false           # RCA K2
+  venv_path: "${VENV_DIR}"
+  enable_huge_pages: false
+  enable_thp: false
+  enable_cpu_governor: false
+  enable_io_scheduler: false
+  enable_memlock: false
+  enable_vm_tune: false
+  cpu_optimizer:
+    enabled: false                     # RCA K1
+    core_mask: ""
+
+kernels:
+  enabled: false                       # RCA K3
+  auto_select: true
+  force_backend: null
+  cpu_optimizer:
+    enabled: false
+    core_mask: ""
+
+memory:
+  vram_utilization_target: 0.95
+  ram_utilization_target: 0.75         # RCA Q2 canonical key
+  compression_enabled: true
+  ssd_swap_path: "${STATE_DIR}/swap"
+  ssd_swap_max_gb: 32
+  gc_interval_s: 60.0
+  gc_on_memory_pressure: true
+
+  vram:
+    vram_target_utilization: 0.95
+    vram_defrag_threshold: null
+    vram_history_window: 256
+    vram_prefetch_alpha: 0.1
+    vram_defrag_check_interval_s: 60.0
+    vram_allocation_retries: 3
+
+  ram:
+    ram_max_mb: 0
+    ram_compress_ratio_threshold: 0.85
+    ram_max_mmaps: 64
+    ram_max_prefetch_concurrent: 16
+
+  swap:
+    ssd_swap_path: "${STATE_DIR}/swap"
+    ssd_swap_max_gb: 32.0
+    ssd_compression_enabled: true
+    ssd_compression_level: 0
+
+  hybrid:
+    ssd_path: "${STATE_DIR}/hybrid"
+    ssd_max_gb: 20.0
+    compression_enabled: true
+    promotion_threshold: 0.95
+
+  sqlite:
+    db_path: "${STATE_DIR}/tmp/llm_keys.db"
+    max_connections: 10
+    connection_timeout_s: 5.0
+
+inference:
+  batch_size: 1
+  default_temperature: 0.7
+  default_top_p: 0.95
+  default_top_k: 40
+  default_max_tokens: 0
+  long_request_threshold_tokens: -1
+  default_stop: []
+  segment_size: 512
+  max_segments: 0
+  max_total_tokens: 16384              # RCA S5
+  default_timeout_s: 3600              # RCA S5
+  heartbeat_interval_s: 5.0
+  chunked_prefill: true
+  chunked_prefill_min_tokens: 256
+  chunked_prefill_chunk_min: 16
+  chunked_prefill_chunk_max: 256
+  chunked_prefill_chunk_seconds: 3.0
+  presence_penalty: 1.0
+  frequency_penalty: 0.2
+  repeat_penalty: 1.05
+  loop_guard_enabled: true
+  solicitation_guard_enabled: true
+  first_token_timeout_floor_s: 120.0
+  first_token_timeout_multiplier: 3.0
+  inter_token_stall_s: 60.0
+  min_response_tokens: 64
+  suppress_thinking: false
+  thinking_budget_tokens: 4000
+  aimd_target_tps: 7.0
+  aimd_min_batch: 1
+  aimd_max_batch: 4
+  max_batch_size: 4
+  target_tps: 8.0
+  rate_limit_rps: 100.0
+  rate_limit_max_keys: 1000
+  context_safety_tokens: 256
+  circuit_breaker_failure_threshold: 5
+  circuit_breaker_recovery_s: 60.0
+  autotune_interval_s: 300.0
+  min_executor_workers: 1
+  executor_max_queue: 64
+  metrics_history_size: 500
+  context_cache_bytes: 268435456
+  context_cache_prefix_len: 512
+  request_queue_maxsize: 2000
+  throughput_optimizer: false
+
+scheduler:
+  aimd_target_tps: 7.0
+  aimd_min_batch: 1
+  aimd_max_batch: 4
+  aimd_interval_s: 5.0
+  aimd_hysteresis: 2
+  aimd_high_margin: 0.95
+  aimd_low_margin: 0.85
+  max_queue_per_priority: 64
+  max_total_queue: 256
+  default_timeout_s: 720.0
+  prune_interval_s: 10.0
+  fairness_weights:
+    low: 1
+    normal: 2
+    high: 4
+    urgent: 8
+  preemption:
+    persist_dir: null
+
+models:
+  allowed_dir: "${STATE_DIR}/models"
+  autoload_all: false
+  autoload_timeout_s: 900.0
+  warmup_enabled: true
+  warmup_prompt: "Hello"
+  warmup_tokens: 10
+  warmup_timeout_s: 30.0
+
+  profiles:
+    - id: "qwen3-8b"
+      path: "${STATE_DIR}/models/Qwen3-8B-Q4_K_M.gguf"
+      format: "gguf"
+      description: "Qwen3 8B (Q4_K_M)"
+      autoload: true
+      model_type: "gguf"
+      quantization: "Q4_K_M"
+      context_length: 0
+      num_gpu_layers: -1
+      n_threads: 0
+      use_mlock: false
+      rope_scaling: 1.0
+      gpu_split: null
+      priority: 10
+      ram_required_mb: 4800
+      suppress_thinking: null
+      tags: ["chat", "code", "primary"]
+
+bitnet:
+  enabled: false
+
+model_loader:
+  load_timeout_s: 600.0
+  shutdown_timeout_s: 10.0
+  min_vram_budget_mb: 100
+  kv_ram_share: 0.35
+  min_context_tokens: 4096
+  max_context_tokens: 8192             # RCA Q1
+  vram_safety_margin_mb: 50
+  vram_runtime_overhead_mb: 100
+  vram_system_prompt_overhead_mb: 50
+  circuit_breaker:
+    failure_threshold: 3
+    recovery_timeout_s: 60.0
+
+model_lifecycle:
+  max_loaded_models: 8
+  idle_timeout_s: 1800.0
+  eviction_policy: "lru"
+  auto_evict_on_pressure: true
+  check_interval_s: 15.0
+
+circuit_breaker:
+  inference_enabled: true
+  inference_failure_threshold: 10
+  inference_error_rate: 0.5
+  inference_recovery_s: 60.0
+  count_timeouts_as_failures: false
+  loader_enabled: true
+  loader_failure_threshold: 3
+  loader_recovery_s: 60.0
+  health_timeout_s: 5.0
+
+conversation:
+  enabled: true
+  storage: "postgresql"
+  host: "localhost"
+  port: 5432
+  database: "llm_conversations"
+  username: "amb_llm"
+  password: "${LLM_DB_PASSWORD}"
+  pool_size: 10
+  max_overflow: 5
+  pool_timeout: 30
+  pool_recycle: 3600
+  max_conversations: 100
+  max_messages_per_conversation: 100
+  max_age_days: 7.0
+  write_buffer_size: 32
+  write_flush_interval: 0.05
+  enable_lease: true
+
+websocket:
+  send_timeout_sec: 2.0
+  max_payload_bytes: 65536
+  ping_interval_sec: 30.0
+  ping_timeout_sec: 5.0
+  max_connections: 100
+  idle_timeout_s: 120
+
+monitoring:
+  metrics_interval_s: 5.0
+  prometheus_enabled: false            # /metrics route serves exposition regardless
+  prometheus_port: 9090
+  prometheus_addr: "127.0.0.1"
+
+  metrics:
+    sample_interval_sec: 5.0
+    history_size: 1200
+    anomaly_detection: true
+    anomaly_latency_z_threshold: 5.0
+    anomaly_temp_threshold_c: 85.0
+
+  telemetry:
+    collect_interval_sec: 5.0
+    history_requests: 10000
+
+  log_buffer_size: 1000
+  idle_model_timeout_s: 1800.0
+  idle_reaper_interval_s: 60.0
+  defrag_check_interval_s: 30.0
+  defrag_queue_threshold: 2
+  log_slow_requests_ms: 5000
+
+logging:
+  level: "info"
+  format: "json"                       # text | json  (Phase 2c)
+  file: "${LOG_DIR}/llm_server.log"
+  file_max_mb: 100
+  file_backups: 3
+  buffer_size: 1000
+  ws_queue_size: 512
+  overflow_file: "${STATE_DIR}/tmp/log_overflow.jsonl"
+
+shutdown:
+  timeout_s: 30
+  engine_timeout_s: 30.0
+  flush_logs: true
+  close_databases: true
+
+debug:
+  enabled: false

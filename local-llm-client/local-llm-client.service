@@ -1,0 +1,31 @@
+[Unit]
+Description=Local LLM Client — background daemon mode
+Documentation=https://github.com/Deveeelloopase/Local-LLM
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/home/deve-oops/AMB-OPT/local-llm-cloud/local-llm-client
+
+Environment="PATH=/home/deve-oops/DEVE-BOX/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+Environment="VIRTUAL_ENV=/home/deve-oops/DEVE-BOX"
+Environment="LLM_SERVER_URL=http://localhost:8080"
+Environment="LLM_CONFIG=/root/.llmcloud/config.yaml"
+
+# Note: the llm CLI is designed for interactive use.
+# If you have a custom background script, set ExecStart to point to it.
+# Example for a background agent:
+#   ExecStart=/home/deve-oops/DEVE-BOX/bin/python -m local_llm_client.daemon
+# For now, this keeps a health-check loop alive:
+ExecStart=/bin/bash -c 'while true; do sleep 60; done'
+
+Restart=on-failure
+RestartSec=15
+StandardOutput=append:/home/deve-oops/AMB-OPT/local-llm-cloud/logs/client.log
+StandardError=append:/home/deve-oops/AMB-OPT/local-llm-cloud/logs/client.log
+SyslogIdentifier=local-llm-client
+
+[Install]
+WantedBy=multi-user.target

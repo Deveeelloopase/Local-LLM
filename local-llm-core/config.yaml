@@ -1,0 +1,801 @@
+# =============================================================================
+# LOCAL-LLM-CORE CONFIG v2.2.0 — Production Configuration
+# =============================================================================
+# This file controls the entire inference engine, from hardware detection
+# and memory management to model loading, batching, kernels acceleration,
+# and automatic lifecycle management.
+#
+# All parameters are read at startup and can be hot‑reloaded by restarting
+# the server process.  Values shown are sensible defaults; adjust them
+# to your hardware and workload.
+# =============================================================================
+
+
+
+
+# THIS CONFIGURATION IS FOR TESTING
+
+
+
+# ----------------------------------------------------------------------------
+# KERNELS — Custom accelerator backends
+# ----------------------------------------------------------------------------
+# The engine can inject hand‑tuned kernels (CUDA, HIP, Metal, Vulkan,
+# CPU isolation) to dramatically speed up matrix operations and inference.
+kernels:
+
+  # Master switch – set to false to disable ALL custom kernels.
+  enabled: true
+
+  # If true, the engine automatically picks the fastest available backend
+  # for your current hardware.  Turn off to use only stock PyTorch.
+  auto_select: true
+
+  # Force a specific backend, ignoring automatic selection.
+  # Options: "cuda", "hip", "metal", "vulkan", "cpu".
+  # Use null to let auto_select decide.
+  force_backend: null
+
+  # CPU optimiser settings (isolation & huge pages via kernels module).
+  cpu_optimizer:
+    # Enable the CPU isolation module (requires root and kernels headers).
+    enabled: true
+
+    # Cores to reserve for inference threads.  Use Linux cpulist format,
+    # e.g. "0-3" to reserve the first four cores.  An empty string means
+    # automatic (all cores).
+    core_mask: ""
+
+
+# ----------------------------------------------------------------------------
+# HARDWARE — GPU detection, preferred backend, timeouts
+# ----------------------------------------------------------------------------
+hardware:
+
+  # Automatically detect GPUs and system parameters.
+  auto_detect: true
+
+  # Preferred inference backend.  Will be used if available, otherwise
+  # the engine falls back through the priority list.
+  # Options: "cuda", "rocm", "vulkan", "opencl", "cpu"
+  preferred_backend: "vulkan"
+
+  # Maximum time (seconds) allowed for the entire hardware detection
+  # process.  If detection hangs (e.g. Vulkan probe on headless systems)
+  # the engine falls back to CPU‑only mode.
+  timeout_seconds: 15.0
+
+  # Directories where Vulkan Installable Client Driver (ICD) JSON manifests
+  # are stored.  The engine checks these to determine if Vulkan is available.
+  # Add or modify paths for your distribution.
+  vulkan_icd_paths:
+    - "/usr/share/vulkan/icd.d"                # Debian / Ubuntu
+    - "/etc/vulkan/icd.d"                      # Administrator overrides
+    - "/usr/lib/x86_64-linux-gnu/GL/vulkan/icd.d"  # Multi‑arch
+    - "/usr/lib/vulkan/icd.d"                  # Arch Linux
+    - "/usr/lib64/vulkan/icd.d"                # 64‑bit fallback
+    - "/run/opengl-driver/share/vulkan/icd.d"  # NixOS
+
+
+# ----------------------------------------------------------------------------
+# HARDWARE PROFILES — Pre‑defined inference configurations for each GPU class
+# ----------------------------------------------------------------------------
+hardware_profiles:
+
+  # Force a specific profile (e.g. "apu_2gb", "gpu_8gb").  null = auto‑detect
+  # based on total VRAM.
+  force_profile: null
+
+  # VRAM boundaries (in MB) used to select a profile.  Adjust these if the
+  # default thresholds do not match your hardware.
+  detection_thresholds:
+    apu_4gb_min_mb: 3073     # APUs with >3072 MB VRAM use "apu_4gb" profile
+    gpu_4gb_max_mb: 5119     # ≤5 GB VRAM → "gpu_4gb"
+    gpu_6gb_max_mb: 7167     # 5–7 GB → "gpu_6gb"
+    gpu_8gb_max_mb: 10239    # 7–10 GB → "gpu_8gb"
+    gpu_12gb_max_mb: 14335   # 10–14 GB → "gpu_12gb"
+    gpu_16gb_max_mb: 20479   # 14–20 GB → "gpu_16gb" (above uses "gpu_24gb+")
+
+  # Override specific attributes of built‑in profiles without creating a
+  # completely custom profile.
+  overrides:
+    apu_2gb:
+      context_length: 2048       # shorter context to fit more layers on GPU
+      target_tps: 8.0
+    gpu_8gb:
+      n_parallel: 2              # allow parallel request processing
+
+  # Define completely custom hardware profiles.  The key becomes the profile
+  # name and can be referenced elsewhere (e.g. in test configurations).
+  custom_profiles: {}
+
+
+# ----------------------------------------------------------------------------
+# GPU ANALYZER — Default compute estimates and thermal limits
+# ----------------------------------------------------------------------------
+gpu_analyzer:
+
+  # Fallback values used when a GPU model is not recognised from built‑in
+  # tables.  These are conservative estimates.
+  default_fp32_tflops: 10.0       # TFLOPS (FP32) for an unknown GPU
+  default_mem_bw_gbps: 200.0      # memory bandwidth in GB/s
+  default_l2_cache_mb: 4.0        # L2 cache size in MB
+  default_pcie_gen: 4             # PCIe generation (4 = PCIe 4.0)
+  default_pcie_lanes: 16          # typical lane count
+  default_pcie_bw_gbps: 16.0      # effective PCIe bandwidth
+  default_ram_bw_gbps: 50.0       # system RAM bandwidth estimate
+
+  # Temperature threshold (°C) for logging thermal warnings.
+  # This does not throttle the GPU; it only alerts you.
+  thermal_throttle_temp_c: 85.0
+
+  # Timeout (seconds) for subprocess commands like `nvidia-smi` or `rocm-smi`.
+  cmd_timeout_s: 10
+
+  # Override compute values for specific GPU model names (case‑insensitive).
+  # Example:
+  #   model_overrides:
+  #     "RTX 4090":
+  #       fp32_tflops: 82.6
+  #       mem_bw_gbps: 1008.0
+  #       l2_cache_mb: 72.0
+  model_overrides: {}
+
+
+# ----------------------------------------------------------------------------
+# MEMORY MANAGEMENT — VRAM, RAM, SSD swap, and hybrid caching
+# ----------------------------------------------------------------------------
+memory:
+
+  # --------------------------- VRAM Manager ---------------------------
+  # Fraction of total VRAM the engine is allowed to use.  A value of 0.95
+  # leaves a small margin for driver overhead.
+  vram_target_utilization: 0.85
+
+  # Fragmentation threshold for triggering automatic defragmentation.
+  # null = auto‑scale (larger VRAM → lower threshold).
+  vram_defrag_threshold: null
+  vram_defrag_threshold_min: 0.10
+  vram_defrag_threshold_max: 0.30
+  vram_defrag_target_divisor_gb: 20   # threshold = 20 / VRAM_GB
+
+  # How often (seconds) the background thread checks fragmentation.
+  vram_defrag_check_interval_s: 60.0
+
+  # Number of recent layer accesses kept for the bigram prediction model.
+  vram_history_window: 256
+
+  # Smoothing factor (0–1) for the EWMA prefetch score. Lower = smoother.
+  vram_prefetch_alpha: 0.1
+
+  # Number of times to retry an allocation after evicting LRU blocks.
+  vram_allocation_retries: 3
+
+  # --------------------------- RAM Optimizer --------------------------
+  # Fraction of system RAM the engine may use for hot/warm caches.
+  ram_target_utilization: 0.75
+
+  # Hard limit on RAM usage (MB). 0 = auto (70% of available RAM).
+  ram_max_mb: 0
+
+  # Only compress data if the compressed size is less than this fraction
+  # of the original size.
+  ram_compress_ratio_threshold: 0.85
+
+  # Maximum number of concurrently memory‑mapped model files.
+  ram_max_mmaps: 64
+
+  # Maximum number of parallel prefetch loader calls (prevents thread exhaustion).
+  ram_max_prefetch_concurrent: 16
+
+  # --------------------------- SSD Swap Handler -----------------------
+  # Directory where swap files are stored.  Must be on fast storage (NVMe).
+  ssd_swap_path: "/tmp/llm_swap"
+
+  # Maximum total size of swap files (GB).
+  ssd_swap_max_gb: 10.0
+
+  # Enable LZ4 compression for swap files (reduces I/O, slight CPU cost).
+  ssd_compression_enabled: true
+
+  # Compression level (0 = fastest, 9 = best compression).
+  ssd_compression_level: 0
+
+  # --------------------------- Hybrid Memory Manager (Three‑Tier) -----
+  hybrid:
+    # Directory for three‑tier persistent storage.
+    ssd_path: "/tmp/llm_hybrid"
+
+    # Maximum SSD usage for the hybrid tier (GB).
+    ssd_max_gb: 20.0
+
+    # Enable compression for SSD‑resident blocks.
+    compression_enabled: true
+
+    # Compression level for hybrid tier (0 = fastest, 9 = best).
+    compression_level: 6
+
+    # VRAM utilisation threshold above which blocks are promoted from RAM.
+    promotion_threshold: 0.95
+
+  # --------------------------- Hybrid Cache (Layer‑Specific) ----------
+  hybrid_cache:
+    # RAM target for model loading
+    ram_target: 0.85                # % of total RAM allowed for model loading
+
+    # RAM budget for layer caching (MB).
+    ram_budget_mb: 512
+
+    # NVMe budget for layer caching (MB).
+    nvme_budget_mb: 5000
+
+    # Access frequency (per minute) required to promote a layer from NVMe to RAM.
+    promote_threshold_per_min: 2.0
+
+    # Access frequency (per minute) below which a layer is demoted to NVMe.
+    demote_threshold_per_min: 0.5
+
+    # Interval (seconds) between automatic rebalance operations.
+    rebalance_interval_s: 60.0
+
+    # RAM pressure threshold (fraction) that triggers eviction of cold layers.
+    ram_pressure_threshold: 0.90
+
+    # EWMA smoothing factor for access frequency tracking.
+    ewma_alpha: 0.1
+
+  # --------------------------- SQLite Connection Pool -----------------
+  sqlite:
+    # Path to the SQLite database used for API keys / metadata.
+    db_path: "/tmp/llm_keys.db"
+
+    # Maximum number of concurrent database connections.
+    max_connections: 10
+
+    # Timeout (seconds) when acquiring a connection from the pool.
+    connection_timeout_s: 5.0
+
+
+# ----------------------------------------------------------------------------
+# SYSTEM OPTIMIZATION — Kernel tuning (requires root)
+# ----------------------------------------------------------------------------
+system:
+
+  # Master switch for all OS‑level tuning. Set to false to disable
+  # everything below.
+  allow_kernel_tuning: true
+
+  # Reserve 2 MB huge pages for large tensor allocations. 0 = auto‑size safely.
+  enable_huge_pages: true
+  huge_pages_count: 0
+
+  # Warn if an explicit huge_pages_count would consume more than this % of RAM.
+  huge_pages_warn_threshold_pct: 15.0
+
+  # Enable Transparent Huge Pages.
+  enable_thp: true
+  thp_mode: "madvise"          # "always" | "madvise" | "never"
+
+  # Set CPU frequency governor to "performance" (requires root).
+  enable_cpu_governor: true
+  cpu_governor: "performance"
+
+  # Set I/O scheduler for NVMe drives (requires root).
+  enable_io_scheduler: true
+  io_scheduler: "mq-deadline"
+
+  # Raise RLIMIT_MEMLOCK to allow locking memory.
+  enable_memlock: true
+
+  # Apply VM sysctl tuning (swappiness, dirty ratios, etc.).
+  enable_vm_tune: true
+
+  # OOM killer score adjustment (-500 protects this process;
+  # +500 makes it a target).
+  oom_score_adj: -500
+
+  # Virtual memory sysctl values (applied when enable_vm_tune is true).
+  vm:
+    swappiness: 10                # prefer keeping file pages in RAM
+    dirty_ratio: 40               # allow up to 40% of RAM to be dirty before forcing writes
+    dirty_background_ratio: 5     # start background writes at 5%
+    vfs_cache_pressure: 50        # tendency to reclaim inode/dentry caches
+    overcommit_memory: 1          # allow overcommit (needed for large allocations)
+
+
+# ----------------------------------------------------------------------------
+# INFERENCE PARAMETERS — Sampling defaults, timeouts, AIMD
+# ----------------------------------------------------------------------------
+inference:
+
+  # Maximum number of simultaneous inference requests.
+  batch_size: 1
+
+  # Default sampling parameters (can be overridden per API request).
+  default_temperature: 0.7
+  default_top_p: 0.95
+  default_top_k: 40
+
+  # Maximum tokens to generate per request. 0 = unlimited (model stops naturally).
+  default_max_tokens: 0
+
+  # Request timeout in seconds. 0 = unlimited.
+  default_timeout_s: 120
+
+  # List of stop strings that signal the end of generation.
+  default_stop:
+    - "<|im_end|>"
+    - "<|endoftext|>"
+
+  # Suppress chain‑of‑thought reasoning for Qwen3 models (faster, lower quality).
+  suppress_thinking: false
+
+  # Maximum tokens allowed for the reasoning phase (Qwen3 only).
+  reasoning_budget_tokens: 4000
+
+  # Show a "thinking" indicator in streaming responses.
+  thinking_indicator_enabled: true
+
+  # ------------------------- AIMD (Adaptive Concurrency) -------------
+  # Target tokens per second the engine tries to maintain.
+  aimd_target_tps: 7.0
+
+  # Minimum and maximum batch size for AIMD adjustments.
+  aimd_min_batch: 1
+  aimd_max_batch: 4
+
+  # How often (seconds) AIMD evaluates throughput and adjusts batch size.
+  aimd_adjust_interval_s: 5.0
+
+  # Maximum concurrent requests (used by server for admission control).
+  max_concurrent_requests: 4
+
+  # Legacy speculative decoding settings (use the 'speculative' section below).
+  throughput_optimizer: false
+  draft_model_id: ""
+  target_model_id: "qwen3-8b"
+  spec_k: 8
+  kv_cache_max_gb: 10.0
+
+
+# ----------------------------------------------------------------------------
+# THROUGHPUT OPTIMIZER — Continuous batching settings
+# ----------------------------------------------------------------------------
+throughput_optimizer:
+
+  # Master switch for continuous batching.
+  enabled: true
+
+  # Maximum number of requests that can be batched together.
+  max_batch_slots: 8
+
+  # Maximum number of requests waiting in the scheduler queue.
+  queue_depth: 64
+
+  # Give a priority boost to requests that hit the KV cache.
+  kv_cache_priority_boost_enabled: true
+  kv_cache_priority_boost: 10
+
+
+# ----------------------------------------------------------------------------
+# NVME KV CACHE — Persistent prompt‑prefix cache
+# ----------------------------------------------------------------------------
+nvme_kv_cache:
+
+  # Enable the persistent KV cache (drastically reduces TTFT for repeated prompts).
+  enabled: true
+
+  # Directory where cached KV states are stored.
+  dir: "/tmp/llm_kv_cache"
+
+  # Maximum disk space used by the cache (GB).
+  max_size_gb: 10.0
+
+  # Maximum number of cache entries. 0 = unlimited.
+  max_entries: 0
+
+  # Number of prompt characters used to generate the cache key.
+  prefix_len: 512
+
+
+# ----------------------------------------------------------------------------
+# LAYER STREAMER — Fractional Layer Pipeline (FLP) settings
+# ----------------------------------------------------------------------------
+layer_streamer:
+
+  # Fixed VRAM overhead for embeddings, output layer, and scratch buffers (MB).
+  vram_overhead_mb: 80
+
+  # Maximum number of OOM retries when loading a model.
+  oom_max_attempts: 5
+
+  # Fraction of GPU layers to keep after an OOM retry (0.75 = reduce by 25%).
+  oom_layer_reduction_factor: 0.75
+
+  # Divisors used to reduce context length (n_ctx) on allocation failure.
+  ctx_reduction_steps: [1, 2, 4]
+
+  # Absolute minimum context length allowed after reduction.
+  min_context: 256
+
+  # Overcommit factor for GPU layers (1.05 = allow 5% over budget, relying on
+  # OOM recovery if needed).
+  layer_overcommit_factor: 1.05
+
+
+# ----------------------------------------------------------------------------
+# DRIVE PIPELINE — NVMe‑backed accelerators (context cache, prefetch, etc.)
+# ----------------------------------------------------------------------------
+drive_pipeline:
+
+  # Target utilisation for VRAM, RAM, and throughput.
+  target_vram_pct: 0.95
+  target_ram_pct: 0.75
+  target_tps: 8.0
+
+  # Fraction of physical cores used for inference threads.
+  cpu_thread_ratio: 0.5
+
+  # ------------------------- Context Cache ---------------------------
+  context_cache:
+    max_bytes: 268435456          # 256 MiB
+    prefix_len: 512               # characters of prompt used for cache key
+
+  # ------------------------- Layer Prefetcher -------------------------
+  layer_prefetcher:
+    prefetch_depth: 3             # number of upcoming layers to prefetch
+    max_cache_bytes: 2147483648   # 2 GiB of RAM for prefetched layers
+    max_workers: 2                # threads used for background prefetch
+
+  # ------------------------- CPU Throttler ----------------------------
+  cpu_throttler:
+    thread_ratio: 0.5             # use 50% of physical cores for inference
+    thread_limit: 0               # 0 = auto (derived from thread_ratio)
+
+  # ------------------------- Concurrency ------------------------------
+  concurrency:
+    initial_capacity: 1           # starting number of concurrent request slots
+
+  # ------------------------- Throughput Controller --------------------
+  throughput_controller:
+    target_tps: 8.0
+    min_batch: 1
+    max_batch: 32
+    window_sec: 300.0             # rolling window for TPS calculation
+    aimd_interval_s: 5.0
+    aimd_high_margin: 1.1         # increase batch if TPS > target * 1.1
+    aimd_low_margin: 0.85         # decrease batch if TPS < target * 0.85
+
+  # ------------------------- NVMe Advisor -----------------------------
+  nvme_advisor:
+    # Only issue WILLNEED hint if model size < this fraction of free RAM.
+    ram_threshold: 0.70
+
+  # ------------------------- Memory Pressure --------------------------
+  memory_pressure:
+    vram_target_pct: 0.95
+    ram_target_pct: 0.75
+
+  # ------------------------- Sysctl -----------------------------------
+  sysctl:
+    dirty_bytes: 268435456        # 256 MiB
+    dirty_background_bytes: 67108864  # 64 MiB
+    vfs_cache_pressure: 50
+    numa_balancing: 0
+
+
+# ----------------------------------------------------------------------------
+# SCHEDULER — Request queuing, AIMD, fairness, preemption
+# ----------------------------------------------------------------------------
+scheduler:
+
+  # AIMD parameters for batch size (same as inference.aimd_* but scoped).
+  aimd_target_tps: 10.0
+  aimd_min_batch: 1
+  aimd_max_batch: 4
+  aimd_interval_s: 5.0
+  aimd_hysteresis: 2              # consecutive on‑target intervals before increasing
+
+  # AIMD margin thresholds.
+  aimd_high_margin: 0.95
+  aimd_low_margin: 0.85
+
+  # Maximum requests waiting per priority level.
+  max_queue_per_priority: 50
+
+  # Absolute maximum total waiting requests (backpressure limit).
+  max_total_queue: 256
+
+  # Default request timeout (seconds) if not specified in the API call.
+  default_timeout_s: 300.0
+
+  # Interval (seconds) for pruning expired requests from the queue.
+  prune_interval_s: 10.0
+
+  # Weighted round‑robin fairness: higher weight = more frequent selection.
+  fairness_weights:
+    low: 1
+    normal: 2
+    high: 4
+    urgent: 8
+
+  # Preemption settings (saving state of lower‑priority requests).
+  preemption:
+    # Directory to persist preempted request states. null = in‑memory only.
+    persist_dir: null
+
+
+# ----------------------------------------------------------------------------
+# BITNET — 1‑bit LLM integration
+# ----------------------------------------------------------------------------
+bitnet:
+
+  # Enable BitNet support globally.
+  enabled: true
+
+  # Default quantization to use when not specified in a profile.
+  default_quantization: "1bit"
+
+  # Use platform‑optimised custom kernels (if available).
+  use_custom_kernels: true
+
+  # Auto‑detect the best kernels backend (CUDA/ROCm/Metal/CPU).
+  auto_detect_kernel_backend: true
+
+  # Force a specific kernels backend. null = auto‑detect.
+  force_kernel_backend: null
+
+  # Fraction of VRAM to use for BitNet models.
+  memory_fraction: 0.9
+
+  # Enable speculative decoding for BitNet models.
+  enable_speculative_decoding: true
+
+  # Enable context caching (KV reuse) for BitNet.
+  enable_context_caching: true
+
+  # Maximum number of BitNet models that can be loaded simultaneously.
+  max_loaded_models: 2
+
+  # Number of retry attempts for network errors during model loading.
+  load_retries: 3
+
+  # Automatically fall back to CPU if VRAM is insufficient.
+  fallback_to_cpu_on_oom: true
+
+  # Pre‑defined BitNet model profiles. If empty, profiles are read from
+  # the main `models.profiles` section (any profile with format "bitnet").
+  profiles: []
+
+  # Fallback model ID used when no profile matches an API request.
+  default_model_id: "bitnet-b1.58-2B-4T"
+
+
+# ----------------------------------------------------------------------------
+# SPECULATIVE DECODING — Draft + target models
+# ----------------------------------------------------------------------------
+speculative:
+
+  # Enable speculative decoding globally.
+  enabled: true
+
+  # Model IDs for draft (small, fast) and target (large, accurate) models.
+  draft_model_id: "qwen3-0.5b"
+  target_model_id: "qwen3-8b"
+
+  # Number of tokens the draft model predicts ahead.
+  k: 8
+
+  # Nucleus sampling parameter for acceptance probability.
+  top_p: 0.9
+
+  # Adaptive k bounds and whether to automatically tune k.
+  min_k: 3
+  max_k: 16
+  adaptive_k: true
+
+  # Timeouts for draft generation and verification phases.
+  draft_timeout_s: 30.0
+  verify_timeout_s: 60.0
+
+  # Use exact logprob verification (requires llama.cpp with logprob support).
+  enable_exact_verification: false
+
+  # Download information for the draft model (used by setup scripts).
+  draft_repo: "Qwen/Qwen3-0.5B-GGUF"
+  draft_filename: "Qwen3-0.5B-Instruct-Q4_K_M.gguf"
+  draft_size_mb: 310
+  vocab_size: 151936               # must match target model's vocab size
+
+
+# ----------------------------------------------------------------------------
+# MULTI‑GPU — Tensor parallelism settings
+# ----------------------------------------------------------------------------
+multi_gpu:
+
+  # Enable multi‑GPU tensor splitting.
+  enabled: true
+
+  # Splitting strategy:
+  #   "auto"     : proportional to free VRAM
+  #   "even"     : equal split across all GPUs
+  #   "manual"   : use manual_ratios list
+  #   "disabled" : never split, even if multiple GPUs are available
+  strategy: "auto"
+
+  # List of split ratios (must sum to 1.0). Only used when strategy = "manual".
+  manual_ratios: null
+
+  # GPU indices to exclude from splitting.
+  exclude_gpu_ids: []
+
+  # Minimum free VRAM (MB) required on a GPU to be considered for splitting.
+  min_free_vram_mb: 512
+
+
+# ----------------------------------------------------------------------------
+# CIRCUIT BREAKER — Failure detection and recovery
+# ----------------------------------------------------------------------------
+circuit_breaker:
+
+  # Number of inference failures before the circuit opens.
+  inference_failure_threshold: 10
+
+  # Error rate (failures / total) that triggers opening.
+  inference_error_rate: 0.5
+
+  # Time (seconds) to wait before attempting recovery (half‑open probe).
+  inference_recovery_s: 60.0
+
+  # Should request timeouts count as failures?
+  count_timeouts_as_failures: false
+
+  # Model loader circuit breaker settings.
+  loader_failure_threshold: 3
+  loader_recovery_s: 60.0
+
+
+# ----------------------------------------------------------------------------
+# MODELS — GGUF and BitNet model profiles and autoloading
+# ----------------------------------------------------------------------------
+models:
+
+  # Security: all model files must reside inside this directory.
+  allowed_dir: "/home/deve-oops/AMB-APP/model"
+
+  # Load all profiles with autoload: true at startup (only if they fit in VRAM).
+  autoload_all: false
+
+  # Timeout (seconds) for the initial autoload sequence.
+  autoload_timeout_s: 900.0
+
+  # Run a short inference after loading to prime caches and pipelines.
+  warmup_enabled: true
+  warmup_prompt: "Hello"
+  warmup_tokens: 10
+  warmup_timeout_s: 30.0
+
+  # Model profiles. Each entry defines a model that can be loaded.
+  # For BitNet models, set format: "bitnet" and include device, quantization, etc.
+  profiles:
+    # ---------------------------------------------------------------------
+    # BitNet 1.58‑bit model (local directory)
+    # ---------------------------------------------------------------------
+    - id: "bitnet-b1.58-2B-4T"
+      path: "/home/deve-oops/AMB-APP/model/bitnet-b1.58-2B-4T"
+      format: "bitnet"            # tells the loader to use the BitNet path
+      quantization: "1bit"
+      device: "cpu"
+      prompt_format: "llama3"
+      num_gpu_layers: 0
+      context_length: 4096
+      autoload: true
+      priority: 5                 # lower than qwen3 to load second
+      ram_required_mb: 3000       # 2B model ~2.7GB + overhead
+      tags: ["bitnet", "1bit", "local"]
+
+    # ---------------------------------------------------------------------
+    # Llama 3.2 1B GGUF model
+    # ---------------------------------------------------------------------
+    - id: "llama-1b"
+      path: "/home/deve-oops/AMB-APP/model/llama-3.2-1b-instruct-q4_k_m.gguf"
+      format: "gguf"
+      quantization: "Q4_K_M"
+      device: "cpu"
+      num_gpu_layers: 0
+      context_length: 2048
+      autoload: false
+      priority: 5
+      tags: ["llama", "fast"]
+
+    # ---------------------------------------------------------------------
+    # Qwen3 8B GGUF model (primary)
+    # ---------------------------------------------------------------------
+    - id: "qwen3-8b"
+      path: "/home/deve-oops/AMB-APP/model/qwen3-8b-q4_k_m.gguf"
+      format: "gguf"
+      description: "Qwen3 8B Q4_K_M — primary model"
+      autoload: false
+      quantization: "Q4_K_M"
+      context_length: 0           # 0 = use hardware profile default
+      num_gpu_layers: -1          # -1 = auto (FLP calculates optimal)
+      n_threads: 0                # 0 = hardware profile default
+      use_mlock: false
+      rope_scaling: 1.0
+      gpu_split: null
+      priority: 10               # lower number = higher priority
+      ram_required_mb: 4800      # conservative estimate for q4_k_m
+      suppress_thinking: null
+      tags: ["chat", "code", "primary"]
+
+    # ---------------------------------------------------------------------
+    # Qwen3 0.6B GGUF model (draft for speculative decoding)
+    # ---------------------------------------------------------------------
+    - id: "qwen3-0.6b"
+      path: "/home/deve-oops/AMB-APP/model/qwen3-0.6b-q4_k_m.gguf"
+      format: "gguf"
+      description: "Qwen3 0.6B — draft for speculative decoding"
+      autoload: false
+      quantization: "Q4_K_M"
+      context_length: 0
+      num_gpu_layers: -1
+      n_threads: 0
+      use_mlock: false
+      rope_scaling: 1.0
+      gpu_split: null
+      priority: 8
+      suppress_thinking: true
+      tags: ["draft", "speculative"]
+
+
+# ----------------------------------------------------------------------------
+# MODEL LOADER — Loading timeouts, VRAM budget, circuit breaker
+# ----------------------------------------------------------------------------
+model_loader:
+
+  circuit_breaker:
+    failure_threshold: 3
+    recovery_timeout_s: 60.0
+
+  # Maximum time (seconds) to wait for another coroutine loading the same model.
+  load_timeout_s: 600.0
+
+  # Maximum time (seconds) to wait for pending loads during graceful shutdown.
+  shutdown_timeout_s: 10.0
+
+  # Minimum VRAM budget (MB) required before attempting to load a model.
+  # If the remaining budget is below this value, the load is rejected.
+  min_vram_budget_mb: 100
+
+
+# ----------------------------------------------------------------------------
+# MODEL LIFECYCLE — Automatic model loading/unloading and eviction
+# ----------------------------------------------------------------------------
+# The lifecycle manager monitors model usage and automatically:
+#   - Loads models on demand when a request arrives for an unloaded model.
+#   - Unloads models that have been idle beyond `idle_timeout_s`.
+#   - Evicts models under memory pressure according to `eviction_policy`.
+model_lifecycle:
+
+  # Maximum number of models that may be loaded simultaneously.
+  max_loaded_models: 8
+
+  # Idle timeout (seconds).  A model that hasn't received a request in this
+  # time will be unloaded (unless it was set as autoload).
+  idle_timeout_s: 1800           # 30 minutes
+
+  # VRAM and RAM utilisation targets that trigger eviction.
+  vram_target_utilization: 0.90
+  ram_target_utilization: 0.75
+
+  # Eviction policy when memory pressure occurs:
+  #   "lru"       : evict the model that was used least recently
+  #   "priority"  : evict the model with the lowest priority value (higher is better)
+  eviction_policy: "lru"
+
+  # Enable automatic eviction under pressure.
+  auto_evict_on_pressure: true
+
+  # Interval (seconds) between background checks for idle models and
+  # memory pressure.
+  check_interval_s: 15.0

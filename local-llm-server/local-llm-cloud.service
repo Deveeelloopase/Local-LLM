@@ -1,0 +1,177 @@
+[Unit]
+Description=Local LLM Cloud - REST API Server (v1.0.0)
+Documentation=https://github.com/Deveeelloopase/Local-LLM
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+# Allow 5 restarts within 600s before giving up. With only 2, a crash plus
+# one manual restart left the service permanently down until reset-failed.
+StartLimitIntervalSec=600
+StartLimitBurst=5
+StartLimitAction=none
+
+[Service]
+# Type=notify + WatchdogSec: the daemon sends READY=1 when its lifespan
+# completes (port bound, accepting), and WATCHDOG=1 every 15s from the
+# asyncio event loop. If the loop freezes — the P0 deadlock class of bug,
+# or any future sync-over-lock regression — the heartbeat stops, systemd
+# expires WatchdogSec, and the unit is killed and restarted.
+#
+# Previously this unit had no Type= (defaulting to simple) and no watchdog,
+# so a frozen process was neither 'failed' nor restarted — it stayed in
+# active(running) forever with port 8080 unbound.
+Type=notify
+NotifyAccess=main
+WatchdogSec=60
+
+# Root retained during Stage 3 for compatibility with the current
+# SystemOptimizer path (allow_kernel_tuning=true writes sysctls and
+# chmods /sys/block/*). Stage 5 removes both the runtime sysctl writes
+# (allow_kernel_tuning → false) and the kernel-module loading, at which
+# point this unit can drop to:
+#     User=llm
+#     Group=llm
+#     DynamicUser=no
+# after installing under /opt and creating the llm user. Do NOT flip this
+# early — /var/lib/local-llm and the app's log/state files under
+# /home/deve-oops need to be chowned first, or the server will fail to
+# write its FileHandler, bootstrap key, and state files.
+User=root
+Group=root
+
+WorkingDirectory=/home/deve-oops/AMB-OPT/local-llm-cloud/local-llm-server
+
+Environment="VIRTUAL_ENV=/home/deve-oops/DEVE-BOX"
+Environment="PYTHONUNBUFFERED=1"
+Environment="PYTHONDONTWRITEBYTECODE=1"
+
+# PYTHONOPTIMIZE intentionally NOT set — transformers 4.52.x uses
+# @replace_return_docstrings, which calls func.__doc__.split() at
+# class-definition time. PYTHONOPTIMIZE strips docstrings (func.__doc__ =
+# None), causing AttributeError in transformers.modeling_utils on import.
+
+Environment="LLM_CONFIG_PATH=/home/deve-oops/AMB-OPT/local-llm-cloud/local-llm-server/config.yaml"
+# Optional .env file — the '-' prefix makes it non-fatal if missing.
+# Contains LLM_API_KEY, LLM_MASTER_KEY, LLM_DB_PASSWORD (see config.yaml).
+EnvironmentFile=-/home/deve-oops/AMB-OPT/local-llm-cloud/local-llm-server/.env
+Environment="LLM_LOG_LEVEL=info"
+
+# Prevent bitnet.cpp subprocess from recursively triggering pip hooks.
+Environment="LLM_SETUP_RUNNING=1"
+Environment="SKIP_POST_INSTALL=1"
+
+# gfx902 (Picasso/Raven 2 APU) — ROCm/HIP does not auto-recognise this GPU
+# without an explicit GFX version override. Without this, HardwareDetector
+# falls back to Vulkan even though config.yaml sets preferred_backend: "hip".
+Environment="PATH=/home/deve-oops/DEVE-BOX/bin:/opt/rocm/bin:/home/deve-oops/AMB-OPT/BitNet/build/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+Environment="HSA_OVERRIDE_GFX_VERSION=9.0.0"
+
+Environment="REAL_HOME=/home/deve-oops"
+
+# Resource limits
+LimitMEMLOCK=2G
+LimitNOFILE=65536
+LimitNPROC=8192
+
+# MemoryHigh is set below MemoryMax (systemd's documented best practice):
+# above MemoryHigh the kernel throttles/reclaims the cgroup gracefully;
+# only above MemoryMax does it hard OOM-kill. Without MemoryHigh, transient
+# spikes go straight to a hard kill with no graceful degradation window.
+MemoryHigh=10G
+MemoryMax=12G
+
+# Log to journald only. The app's own FileHandler (config.yaml
+# logging.file) writes the same content to /home/deve-oops/AMB-OPT/
+# local-llm-cloud/logs/llm_server.log. Previously StandardOutput=append:
+# pointed at the SAME file the FileHandler writes, causing (a) duplicate
+# lines, (b) after log rotation, systemd kept appending to the renamed
+# old file while the FileHandler opened the new one — two writers, one
+# file, guaranteed corruption. One writer per file is the rule.
+# Operators still see everything via `journalctl -u local-llm-cloud -f`;
+# the file remains available for direct tail.
+StandardOutput=journal
+StandardError=journal
+
+# Port-in-use pre-check: fail fast rather than kill a process that isn't
+# ours. Previously `ExecStartPre=-/bin/bash -c '... fuser -k 8080/tcp'`
+# would SIGKILL whatever owned port 8080 — including unrelated services
+# (e.g. an accidentally-configured second instance, or a dev server on
+# the same port). That's a production hazard: systemd should report a
+# failed start, not silently terminate someone else's process.
+# StartLimitBurst=5 + RestartSec=5 caps retries at 5 tries / 10 minutes
+# if the port really is stuck held.
+ExecStartPre=/bin/bash -c 'ss -tln 2>/dev/null | grep -q ":8080 " && { echo "port 8080 already in use" >&2; exit 1; } || exit 0'
+
+# Ensure log directory exists (idempotent).
+ExecStartPre=/bin/bash -c 'mkdir -p /home/deve-oops/AMB-OPT/local-llm-cloud/logs'
+
+# Note: systemd does not expand ${VAR} in ExecStart. Absolute paths only.
+#
+# --host is NOT set here. Bind address comes from config.yaml
+# (server.host: "127.0.0.1"). To expose the API on all interfaces,
+# change server.host to "0.0.0.0" in config.yaml — do NOT add a --host
+# override here, because the RCA (finding 4.3) flagged that the previous
+# `--host 0.0.0.0` silently overrode the config's "127.0.0.1" and would
+# keep overriding it even after config was changed to a restrictive bind.
+# If you need to override for one deployment only, add the flag back
+# here explicitly so the divergence is visible in `systemctl cat`.
+ExecStart=/home/deve-oops/DEVE-BOX/bin/llm-server \
+    serve \
+    --port 8080 \
+    --workers 1 \
+    --drain-timeout 120 \
+    --log-level info \
+    --log-file /home/deve-oops/AMB-OPT/local-llm-cloud/logs/llm_server.log \
+    --config /home/deve-oops/AMB-OPT/local-llm-cloud/local-llm-server/config.yaml
+
+ExecStop=/bin/kill -TERM $MAINPID
+
+# Stop = stop accepting connections, let in-flight generations finish for
+# up to --drain-timeout (120s above), THEN unload the model.
+# TimeoutStopSec must be larger than --drain-timeout + model-unload time
+# (~5s), otherwise systemd SIGKILLs mid-generation.
+TimeoutStopSec=150
+KillMode=mixed
+KillSignal=SIGTERM
+
+Restart=on-failure
+RestartSec=5
+
+# TimeoutStartSec covers ONLY the lifespan setup (up to the yield): config
+# parse, logger setup, hardware detection, memory managers, engine
+# instantiation, key store connect. Model loading runs as a background
+# task AFTER yield and is not covered here.
+#
+# 180s gives plenty of headroom on this box (setup takes ~3s). Bump back
+# to 900 if BitNet is ever enabled (bitnet.enabled: true in config.yaml),
+# because the bitnet.cpp build + verify path can take 10+ minutes on a
+# first run.
+TimeoutStartSec=180
+
+# ── Hardening ────────────────────────────────────────────────────────────
+# NoNewPrivileges blocks privilege gain via setuid/setgid — safe while
+# running as root (we're already root; setuid is irrelevant). Prevents a
+# compromised Python process from spawning a more privileged child.
+NoNewPrivileges=true
+
+# PrivateTmp: the app uses /var/lib/local-llm for all persistent state
+# (crash.log, swap, kv_cache) and its own log dir; /tmp is only used by
+# third-party libs that already expect private temp. Safe to isolate.
+PrivateTmp=true
+
+# Full ProtectSystem / ProtectKernelTunables / non-root User come in
+# Stage 5 after:
+#   * system.allow_kernel_tuning is set to false (no sysctl writes),
+#   * kernel-module loading is removed from the runtime path,
+#   * files are installed under /opt + /etc + /var (not /home),
+#   * a dedicated llm service user is created.
+# Until then, these would break the current SystemOptimizer and FileHandler
+# paths. See RCA 4.3 for the full sequence.
+ProtectSystem=no
+ProtectHome=false
+ProtectKernelTunables=no
+
+SyslogIdentifier=local-llm-server
+
+[Install]
+WantedBy=multi-user.target
