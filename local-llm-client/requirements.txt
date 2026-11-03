@@ -1,0 +1,49 @@
+# ==================================================================================
+# LOCAL-LLM-CLIENT — REQUIREMENTS (v1.0.0)
+# ==================================================================================
+# imported in local_llm_client/, verified by scanning the package's own imports —
+# including inside the interactive CLI's rendering and input-handling code.
+#
+# ==================================================================================
+
+# ─── HTTP client ──────────────────────────────────────────────────────────────
+httpx
+urllib3
+
+# ─── CLI & terminal UI ─────────────────────────────────────────────────────────
+click
+rich
+prompt_toolkit
+
+# ─── Configuration & data validation ───────────────────────────────────────────
+pyyaml
+pydantic
+
+# ─── System info ────────────────────────────────────────────────────────────────
+psutil
+
+# ==================================================================================
+# OPTIONAL EXTRAS
+# ==================================================================================
+
+# ─── [fast] — used automatically when installed, code falls back cleanly without ──
+aiohttp
+cffi
+
+# ─── [highlight] — syntax-highlighted JSON output in the CLI ─────────────────────
+pygments
+
+# ─── [dev] — development & testing ────────────────────────────────────────────────
+# pytest==8.3.3
+# pytest-asyncio==0.24.0
+# pytest-cov==5.0.0
+# mypy==1.11.2
+# ruff==0.6.9
+# black==24.8.0
+
+# ==================================================================================
+# NOT LISTED (previously present, removed as inaccurate):
+# - `anyio`: not imported anywhere in local_llm_client/ — httpx pulls in its own
+#   async-compatibility layer transitively; there's no direct use of anyio's API
+#   in this package's own code.
+# ==================================================================================

@@ -1,0 +1,132 @@
+# Prometheus alert rules for Local LLM Cloud.
+# Scrape config: see prometheus.yml.example in this directory.
+#
+# Load with:
+#   prometheus --config.file=/etc/prometheus/prometheus.yml
+# where prometheus.yml has:
+#   rule_files:
+#     - /etc/prometheus/local-llm-alerts.yml
+
+groups:
+  - name: local-llm-cloud
+    interval: 30s
+    rules:
+
+      # ── Liveness / reachability ────────────────────────────────────────
+      - alert: LLMServerDown
+        expr: up{job="local-llm-cloud"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Local LLM Cloud is not responding to /metrics"
+          description: >
+            Prometheus cannot scrape the local-llm-cloud instance for
+            2+ minutes. Check `systemctl status local-llm-cloud` and
+            `journalctl -u local-llm-cloud --no-pager -n 200`. If the
+            process is up but /metrics times out, the event loop is
+            almost certainly blocked (see EventLoopLagStuck below).
+
+      # ── Event loop health ──────────────────────────────────────────────
+      - alert: EventLoopLagHigh
+        expr: llm_event_loop_lag_seconds > 0.5
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Event loop lag > 500ms on Local LLM Cloud"
+          description: >
+            Sustained scheduling delay indicates the asyncio loop is
+            being blocked by sync work. Common causes: filesystem I/O
+            on the loop thread, a lock deadlock regression, or GC.
+            Investigate with `py-spy dump --pid $(systemctl show -p
+            MainPID --value local-llm-cloud)`.
+
+      - alert: EventLoopLagStuck
+        expr: llm_event_loop_lag_seconds > 2.0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Event loop STUCK (>2s) — service effectively frozen"
+          description: >
+            The event loop has been blocked for over 2 seconds. All HTTP
+            endpoints are frozen. systemd's WatchdogSec will restart the
+            unit if it stays stuck, but this alert gives earlier notice.
+
+      # ── Circuit breaker ────────────────────────────────────────────────
+      - alert: CircuitBreakerOpen
+        expr: llm_circuit_breaker_state == 1
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Inference circuit breaker is OPEN"
+          description: >
+            The circuit breaker has tripped after repeated failures.
+            Requests will fail with 503 for at least
+            inference.circuit_breaker_recovery_s seconds (default 60).
+            Check recent error logs for the underlying cause.
+
+      # ── Capacity ───────────────────────────────────────────────────────
+      - alert: QueueSaturated
+        expr: llm_gate_waiters >= 10
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Inference queue saturated ({{ $value }} waiting)"
+          description: >
+            More than 10 requests are waiting for the inference gate.
+            On single-slot hardware this is normal under load; sustained
+            values above 32 indicate undersized capacity or a stuck slot.
+
+      - alert: CapacityRejecting
+        expr: rate(llm_capacity_rejected_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Pre-flight rejections ({{ $labels.reason }})"
+          description: >
+            The server is rejecting requests at pre-flight due to
+            {{ $labels.reason }}. Clients are getting 503 + Retry-After.
+
+      # ── Error rate ─────────────────────────────────────────────────────
+      - alert: HighErrorRate
+        expr: >
+          rate(llm_errors_total[5m]) / rate(llm_requests_total[5m]) > 0.05
+          and rate(llm_requests_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Inference error rate > 5% over 5 minutes"
+          description: >
+            More than 5% of requests are failing. Inspect
+            /v1/metrics and recent ERROR-level logs for the pattern.
+
+      # ── Throughput regression ──────────────────────────────────────────
+      - alert: ThroughputDegraded
+        expr: llm_decode_tps > 0 and llm_decode_tps < 2.0
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Decode throughput below 2 tok/s"
+          description: >
+            Sustained low decode throughput. Check for memory pressure
+            (swap active?), thermal throttling, or a hung worker thread.
+
+      # ── Memory pressure ────────────────────────────────────────────────
+      - alert: MemoryHigh
+        expr: llm_ram_percent > 90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "RAM usage > 90%"
+          description: >
+            Sustained RAM pressure above 90% on a box running Postgres
+            and a 2GB iGPU carve-out risks OOM-kill. Check whether a
+            model load left pinned memory behind.

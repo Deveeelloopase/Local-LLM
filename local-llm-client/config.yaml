@@ -1,0 +1,453 @@
+# ==============================================================================
+# LOCAL LLM CLIENT CONFIGURATION v3.0 – Production‑Grade
+# ==============================================================================
+# Place this file in:
+#   ~/.llmcloud/config.yaml   (or set LLM_CONFIG_DIR environment variable)
+#
+# All values can be overridden by environment variables.
+# Use ${VAR_NAME:default} syntax for dynamic values.
+#
+# ⚠️ SECURITY: Never commit this file with real API keys.
+#              Use environment variables for production deployments.
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# Server connection – where your Local LLM Cloud instance lives
+# ------------------------------------------------------------------------------
+server:
+  # Base URL of the server (http:// or https://)
+  base_url: ${LLM_SERVER_URL:http://localhost:8080}
+
+  # API key for regular endpoints (set via LLM_API_KEY env var)
+  api_key: ${LLM_API_KEY:}
+
+  # Master key for admin endpoints (set via LLM_MASTER_KEY env var)
+  # ⚠️ Use a strong, unique value and never expose it publicly.
+  master_key: ${LLM_MASTER_KEY:}
+
+  # Verify SSL certificates (disable only for local testing with self‑signed certs)
+  verify_ssl: ${LLM_VERIFY_SSL:true}
+
+  # Optional custom CA certificate path (PEM file)
+  ca_cert: ${LLM_CA_CERT:}
+
+  # Optional client certificate path for mutual TLS (PEM file)
+  client_cert: ${LLM_CLIENT_CERT:}
+
+  # Optional client certificate key path
+  client_key: ${LLM_CLIENT_KEY:}
+
+# ------------------------------------------------------------------------------
+# HTTP client – connection pooling, timeouts, retries
+# ------------------------------------------------------------------------------
+http:
+  # Maximum number of concurrent connections in the pool
+  pool_size: ${LLM_POOL_SIZE:50}
+
+  # Maximum seconds to wait for a free pool slot
+  pool_timeout_s: ${LLM_POOL_TIMEOUT:10.0}
+
+  # TCP connect timeout (seconds)
+  connect_timeout_s: ${LLM_CONNECT_TIMEOUT:5.0}
+
+  # Per‑chunk read timeout for streaming (seconds)
+  read_timeout_s: ${LLM_READ_TIMEOUT:300.0}
+
+  # Total request timeout (seconds) – long reasoning may need 1800+
+  total_timeout_s: ${LLM_TOTAL_TIMEOUT:1800.0}
+
+  # Streaming keep‑alive timeout (seconds)
+  stream_timeout_s: ${LLM_STREAM_TIMEOUT:120.0}
+
+  # Maximum time between stream chunks before aborting (seconds)
+  stream_chunk_timeout_s: ${LLM_STREAM_CHUNK_TIMEOUT:30.0}
+
+  # Maximum retry attempts on transient errors
+  max_retries: ${LLM_MAX_RETRIES:3}
+
+  # Initial delay between retries (seconds)
+  retry_delay_s: ${LLM_RETRY_DELAY:1.0}
+
+  # Maximum retry delay cap (seconds)
+  retry_delay_max_s: ${LLM_RETRY_DELAY_MAX:30.0}
+
+  # Exponential backoff multiplier for retries
+  retry_backoff_factor: ${LLM_RETRY_BACKOFF:2.0}
+
+  # Random jitter factor applied to retry delays (0.0 – 0.5)
+  retry_jitter: 0.1
+
+  # HTTP status codes that are retryable
+  retryable_status_codes: [408, 429, 500, 502, 503, 504]
+
+  # Keep TCP connections alive between requests (HTTP Keep‑Alive)
+  http_keep_alive: true
+
+  # Enable HTTP/2 (experimental – depends on library support)
+  http2_enabled: false
+
+# ------------------------------------------------------------------------------
+# Circuit breaker – protects the client from hammering a broken server
+# ------------------------------------------------------------------------------
+circuit_breaker:
+  # Enable the circuit breaker
+  enabled: ${LLM_CIRCUIT_BREAKER_ENABLED:true}
+
+  # Number of consecutive failures to open the circuit
+  failure_threshold: ${LLM_FAILURE_THRESHOLD:5}
+
+  # Error rate threshold (0.0 – 1.0) to open circuit
+  error_rate_threshold: ${LLM_ERROR_RATE_THRESHOLD:0.5}
+
+  # Time (seconds) before transitioning from OPEN → HALF‑OPEN
+  recovery_timeout_s: ${LLM_RECOVERY_TIMEOUT:60.0}
+
+  # Timeout for the probe request in HALF‑OPEN state
+  half_open_probe_timeout_s: ${LLM_HALF_OPEN_PROBE_TIMEOUT:10.0}
+
+  # Log state changes (closed ↔ open ↔ half‑open)
+  log_state_changes: true
+
+  # Log individual failures that count towards the threshold
+  log_failures: true
+
+# ------------------------------------------------------------------------------
+# Inference defaults – sampling parameters and timeouts
+# ------------------------------------------------------------------------------
+inference:
+  # Default model identifier (must match pattern [a-zA-Z0-9_-]+)
+  model: ${LLM_MODEL:qwen3-8b}
+
+  # Temperature (0.0 = deterministic, 2.0 = very random)
+  temperature: ${LLM_TEMPERATURE:0.7}
+
+  # Nucleus sampling – only consider tokens with cumulative probability ≤ p
+  top_p: ${LLM_TOP_P:0.95}
+
+  # Top‑K sampling – only consider the K most likely tokens
+  top_k: ${LLM_TOP_K:40}
+
+  # Maximum tokens to generate per request (0 = unlimited / model context)
+  max_tokens: ${LLM_MAX_TOKENS:0}
+
+  # Timeout per inference request (seconds)
+  timeout_s: ${LLM_INFERENCE_TIMEOUT:1800.0}
+
+  # Enable streaming by default (can be overridden per request)
+  stream_enabled: true
+
+  # Word buffer flush interval for streaming (milliseconds)
+  stream_flush_interval_ms: 80
+
+  # Streaming buffer size ("dynamic" or an exact byte count, e.g. 262144)
+  stream_buffer_size: ${LLM_STREAM_BUFFER_SIZE:dynamic}
+
+  # Global system prompt applied to every request (can be overridden)
+  system_prompt: null
+
+  # Stop tokens – generation stops when any of these strings is produced
+  default_stop:
+    - "<|im_end|>"
+    - "<|endoftext|>"
+
+# ------------------------------------------------------------------------------
+# Health checks – client initialisation and periodic monitoring
+# ------------------------------------------------------------------------------
+health_check:
+  # Check server health when the client is first created
+  on_init_enabled: true
+
+  # Number of health‑check retries on failure
+  on_init_retries: 3
+
+  # Delay between retries (seconds)
+  on_init_retry_delay_s: 2.0
+
+  # Timeout for the health endpoint (seconds)
+  on_init_timeout_s: 10.0
+
+  # Wait for a model to be loaded before returning from initialisation
+  wait_for_model: false
+
+  # Maximum wait time for model load (seconds)
+  wait_timeout_s: 300.0
+
+  # Enable periodic background health checks
+  periodic_enabled: false
+
+  # Interval between periodic checks (seconds)
+  periodic_interval_s: 60.0
+
+  # Log health check failures
+  log_health_failures: true
+
+  # If health check fails, continue anyway (fail‑open)
+  fail_open: false
+
+# ------------------------------------------------------------------------------
+# Metrics – performance estimation and token counting
+# ------------------------------------------------------------------------------
+metrics:
+  # Fallback tokens‑per‑second if the server does not report metrics
+  tps_estimate_fallback: 7.0
+
+  # Cache the server‑reported TPS for this many seconds
+  tps_cache_ttl_s: 60.0
+
+  # Extra padding added to calculated timeout (seconds)
+  base_timeout_padding_s: 15.0
+
+  # Minimum allowed timeout (seconds)
+  min_timeout_s: 30.0
+
+  # Token counting method: "fast" (local heuristic) or "exact" (server endpoint)
+  token_count_method: "fast"
+
+  # Multiplier used by the fast token estimator (words → tokens)
+  token_estimate_multiplier: 1.33
+
+# ------------------------------------------------------------------------------
+# Local cache & persistence
+# ------------------------------------------------------------------------------
+cache:
+  # Directory for configuration files
+  config_dir: ${LLM_CONFIG_DIR:~/.llmcloud}
+
+  # Configuration file name
+  config_file: ${LLM_CONFIG_FILE:config.yaml}
+
+  # API key cache TTL (seconds)
+  api_key_cache_ttl_s: 3600.0
+
+  # Directory for conversation sessions (CLI interactive mode)
+  session_dir: ${LLM_SESSION_DIR:~/.llmcloud/sessions}
+
+  # Keep sessions for N days
+  session_retention_days: 30
+
+  # Maximum number of stored sessions (oldest evicted first)
+  max_sessions: 100
+
+# ------------------------------------------------------------------------------
+# Security & input validation
+# ------------------------------------------------------------------------------
+security:
+  # Validate the base URL format on load
+  validate_base_url: true
+
+  # Validate model name format (alphanumeric + hyphens/underscores)
+  validate_model_name: true
+
+  # Validate API key format (minimum length, character set)
+  validate_api_key_format: true
+
+  # Allow API keys to be stored in the config file (warning logged if true)
+  api_key_allowed_in_config: true
+
+  # If true, API keys MUST be supplied via environment variable, not config file
+  api_key_from_env_only: false
+
+  # Minimum TLS version for HTTPS connections (TLSv1.2 or TLSv1.3)
+  min_tls_version: "TLSv1.2"
+
+  # Hash sensitive values (API keys) in log output
+  hash_sensitive_logs: true
+
+  # Maximum allowed request body size (bytes, enforced client‑side)
+  max_request_size_bytes: 10485760  # 10 MB
+
+# ------------------------------------------------------------------------------
+# Logging
+# ------------------------------------------------------------------------------
+logging:
+  # Log level: debug, info, warning, error
+  level: ${LLM_LOG_LEVEL:info}
+
+  # Output logs to stderr
+  console_enabled: true
+
+  # Write logs to a file
+  file_enabled: false
+
+  # Log file path
+  file_path: ${LLM_LOG_FILE:~/.llmcloud/client.log}
+
+  # Maximum size before rotation (MB)
+  file_max_mb: 10
+
+  # Number of rotated backup files to keep
+  file_backups: 3
+
+  # Log message format (standard Python logging format)
+  format: "[%(asctime)s] [%(levelname)-8s] [%(name)s]: %(message)s"
+
+  # Date format for timestamps
+  date_format: "%Y-%m-%d %H:%M:%S"
+
+  # Use JSON structured logging (machine‑readable)
+  use_json: false
+
+  # Mask API keys in log output
+  mask_api_keys: true
+
+  # Truncate long prompts in logs (protects against prompt leaks)
+  mask_prompts: false
+
+  # Log raw HTTP requests (very verbose – debug only)
+  log_http_requests: false
+
+  # Log raw HTTP responses (very verbose – debug only)
+  log_http_responses: false
+
+  # Log every retry attempt
+  log_retry_attempts: true
+
+  # Log circuit breaker state transitions
+  log_circuit_breaker: true
+
+# ------------------------------------------------------------------------------
+# Advanced tuning – concurrency, C acceleration, context windows
+# ------------------------------------------------------------------------------
+advanced:
+  # Thread pool size for blocking operations (synchronous client)
+  max_workers: ${LLM_MAX_WORKERS:4}
+
+  # Enable Python asyncio debug mode (slower, verbose)
+  asyncio_debug: false
+
+  # Prefer aiohttp if installed (faster async networking)
+  prefer_aiohttp: true
+
+  # Log a warning when falling back to synchronous mode
+  log_aiohttp_fallback: true
+
+  # urllib3 connection pool size (if used by the sync client)
+  urllib3_pool_connections: 10
+  urllib3_pool_maxsize: 10
+
+  # Enable the C accelerator for token counting and word‑boundary detection
+  enable_c_accelerator: true
+
+  # Enable smart word‑based streaming chunks (never split words)
+  word_boundary_detection: true
+
+  # Use a singleton for AdaptiveContextManager (thread‑safe)
+  context_manager_singleton: true
+
+  # Do not query the server for the context window size; use the fallback
+  context_window_static: false
+
+  # Fallback context window size (tokens) if server does not report it
+  context_window_fallback: 4096
+
+  # Allow automatic prompt compression when the context limit is exceeded
+  allow_prompt_compression: true
+
+  # Compression threshold ratio (prompt uses >80% → compress)
+  compression_threshold_ratio: 0.8
+
+  # Automatically retry on timeout with exponential backoff
+  auto_retry_on_timeout: true
+
+  # Fallback to a smaller model if the current one fails (experimental)
+  auto_fallback_to_smaller_model: false
+
+# ------------------------------------------------------------------------------
+# CLI defaults – behaviour of the command‑line interface
+# ------------------------------------------------------------------------------
+cli:
+  # Stream by default in interactive chat mode
+  interactive_default_stream: true
+
+  # Number of messages kept in memory per interactive conversation
+  interactive_history_size: 50
+
+  # Default timeout for the chat command (null → use inference.timeout_s)
+  chat_default_timeout_s: null
+
+  # Always show thinking tags (Qwen3 models) in assistant output
+  chat_always_show_thinking: false
+
+  # Cache the model list for this many seconds before refreshing
+  models_refresh_interval_s: 60.0
+
+  # Status dashboard refresh interval (seconds)
+  status_refresh_interval_s: 5.0
+
+  # Show queue depth in the status output
+  status_show_queue_depth: true
+
+  # Enable readline history for interactive chat
+  readline_history_enabled: true
+
+  # Path to the readline history file
+  readline_history_file: ~/.llmcloud/.chat_history
+
+# ------------------------------------------------------------------------------
+# Adapter settings – for ai_agent.py integration
+# ------------------------------------------------------------------------------
+adapter:
+  # Use the asynchronous client internally
+  use_async: true
+
+  # Enable adaptive context management (token budgeting, compression)
+  enable_adaptive_context: true
+
+  # Recover the context window after a successful generation
+  context_recovery_enabled: true
+
+  # Reduce the context window by this factor on timeout (0.85 = –15%)
+  context_reduction_factor: 0.85
+
+  # Increase the context window by this factor after success (1.05 = +5%)
+  context_recovery_factor: 1.05
+
+  # Enable prompt compression when the token budget is exceeded
+  enable_compression: true
+
+  # Target compression ratio (60% of the original prompt length)
+  compression_target_ratio: 0.6
+
+  # Allow quality degradation (e.g., truncation) to meet constraints
+  allow_degradation: true
+
+  # Maximum number of degradation attempts per request
+  max_degradation_attempts: 3
+
+  # Sleep between degradation attempts (seconds)
+  degradation_sleep_s: 1.0
+
+  # Track total request counts in adapter metrics
+  track_requests: true
+
+  # Track total error counts in adapter metrics
+  track_errors: true
+
+  # Track total token counts in adapter metrics
+  track_tokens: true
+
+  # Include performance metrics in adapter responses
+  report_metrics: true
+
+# ------------------------------------------------------------------------------
+# Observability – OpenTelemetry / Prometheus (optional)
+# ------------------------------------------------------------------------------
+observability:
+  # Enable OpenTelemetry tracing export (requires otel packages)
+  otel_enabled: false
+
+  # OTLP exporter endpoint (gRPC)
+  otel_endpoint: ${LLM_OTEL_ENDPOINT:http://localhost:4317}
+
+  # Service name reported to the tracing backend
+  otel_service_name: local-llm-client
+
+  # Enable Prometheus metrics export on a local port (requires prometheus_client)
+  prometheus_enabled: false
+
+  # Prometheus metrics listen port
+  prometheus_port: 9091
+
+# ------------------------------------------------------------------------------
+# End of configuration
+# ------------------------------------------------------------------------------

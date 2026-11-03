@@ -1,0 +1,28 @@
+#version 450
+// Vulkan GLSL compute shader for ternary matrix multiplication
+layout(local_size_x = 16, local_size_y = 16) in;
+
+layout(std430, binding = 0) readonly buffer A { float16_t a[]; };   // M*K
+layout(std430, binding = 1) readonly buffer B { int8_t b[]; };      // K*N packed
+layout(std430, binding = 2) readonly buffer Scale { float scale[]; };// N
+layout(std430, binding = 3) writeonly buffer C { float16_t c[]; };  // M*N
+
+layout(push_constant) uniform PushConsts { uint M; uint N; uint K; };
+
+void main() {
+    uint row = gl_GlobalInvocationID.x;
+    uint col = gl_GlobalInvocationID.y;
+    if (row >= M || col >= N) return;
+
+    float sum = 0.0;
+    for (uint k = 0; k < K; ++k) {
+        uint idx = k * N + col;
+        uint byte_idx = idx / 4;
+        uint shift = (idx % 4) * 2;
+        int val = (b[byte_idx] >> shift) & 0x3;
+        int w = (val == 0) ? 0 : ((val == 1) ? 1 : -1);
+        sum += float(a[row * K + k]) * float(w);
+    }
+    // Write back as half
+    c[row * N + col] = float16_t(sum * scale[col]);
+}
