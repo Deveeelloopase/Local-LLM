@@ -1,0 +1,176 @@
+[Unit]
+Description=Local LLM Cloud - REST API Server (v1.0.0)
+Documentation=https://github.com/Deveeelloopase/Local-LLM
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+# 10 attempts per 10 minutes, 10 s apart. Clear with: systemctl reset-failed local-llm-cloud
+#
+# with ExecStartPost now gating "started" on
+# /readyz returning 200, ONE start attempt can take up to
+# models.autoload_timeout_s (900 s) when the model is loading slowly.
+# With RestartSec=10 s and this 600 s / 10-attempt window, a persistent
+# slow-load failure loops indefinitely at ~15-min intervals rather than
+# tripping the start limit. Fast failures (missing GGUF, config typo,
+# missing Postgres) still trip normally because each attempt completes
+# in seconds. If you want slow failures to also trip the limit, bump
+# StartLimitIntervalSec above 9100 (= 10 attempts x ~910 s). This is a
+# deliberate policy trade-off (retry-forever-on-transient vs. fail-fast);
+# the current default errs toward retry.
+StartLimitIntervalSec=600
+StartLimitBurst=10
+StartLimitAction=none
+
+[Service]
+Type=notify
+NotifyAccess=main
+WatchdogSec=60
+
+# Runs as root so it can read the venv, config, and models under /home/deve-oops
+# and use the GPU. Root retains filesystem powers only because CAP_DAC_OVERRIDE
+# and CAP_DAC_READ_SEARCH are explicitly kept in CapabilityBoundingSet below.
+# Without those two, "root" is bound by permission bits, cannot enter a
+# 0700/0750 home directory, and every start fails with 203/EXEC or a
+# mkdir "Permission denied" — even though a manual `sudo` run works.
+User=root
+Group=root
+
+WorkingDirectory=/home/deve-oops/AMB-OPT/local-llm-cloud/local-llm-server
+
+Environment="VIRTUAL_ENV=/home/deve-oops/DEVE-BOX"
+Environment="PYTHONUNBUFFERED=1"
+Environment="PYTHONDONTWRITEBYTECODE=1"
+Environment="LLM_CONFIG_PATH=/home/deve-oops/AMB-OPT/local-llm-cloud/local-llm-server/config.yaml"
+Environment="LLM_LOG_LEVEL=info"
+Environment="LLM_STATE_DIR=/var/lib/local-llm"
+Environment="LLM_SETUP_RUNNING=1"
+Environment="SKIP_POST_INSTALL=1"
+Environment="PATH=/home/deve-oops/DEVE-BOX/bin:/opt/rocm/bin:/home/deve-oops/AMB-OPT/BitNet/build/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+Environment="HSA_OVERRIDE_GFX_VERSION=9.0.0"
+Environment="REAL_HOME=/home/deve-oops"
+
+# Server also loads .env beside config.yaml itself (after the api_server.py fix);
+# a malformed line here can no longer stop the unit from starting.
+EnvironmentFile=-/home/deve-oops/AMB-OPT/local-llm-cloud/local-llm-server/.env
+
+LimitMEMLOCK=2G
+LimitNOFILE=65536
+LimitNPROC=8192
+
+MemoryHigh=10G
+MemoryMax=12G
+
+StandardOutput=journal
+StandardError=journal
+
+# "+" = run outside the sandbox with full privileges. "-" = failure here
+# never blocks the start. Ensures every ReadWritePaths= target exists
+# before ProtectSystem=strict takes effect, including the two root-owned
+# caches that PrefillTracker writes.
+ExecStartPre=-+/bin/mkdir -p /home/deve-oops/AMB-OPT/local-llm-cloud/logs /home/deve-oops/AMB-OPT/local-llm-cloud/tmp /var/lib/local-llm /root/.cache/local-llm /root/.config/local-llm
+
+ExecStart=/home/deve-oops/DEVE-BOX/bin/llm-server \
+    serve \
+    --host 127.0.0.1 \
+    --port 8080 \
+    --workers 1 \
+    --drain-timeout 120 \
+    --log-level info \
+    --log-file /home/deve-oops/AMB-OPT/local-llm-cloud/logs/llm_server.log \
+    --config /home/deve-oops/AMB-OPT/local-llm-cloud/local-llm-server/config.yaml
+
+# readiness gate. The unit does NOT transition to
+# "started" until /readyz returns 200 — i.e. a model can actually serve
+# traffic. Previously Type=notify + sd_notify("READY=1") fired at the
+# end of FastAPI's lifespan yield, which happens when the PORT is bound
+# but BEFORE autoload finishes loading the model (see api_server.py's
+# "runtime limits banner" and the sd_notify("READY=1") comment above
+# that block). Downstream units with After=local-llm-cloud.service were
+# therefore free to send requests that 503'd with "no model loaded".
+#
+# Poll mechanics:
+#   * One curl per iteration, --max-time 3 so a hung HTTP response
+#     cannot consume the entire budget on a single stuck attempt.
+#   * `-sf` (silent + fail-on-4xx/5xx) — curl exits 0 only on HTTP 200,
+#     non-zero on 503 (model loading), 401/403 (misconfig), and 7 (port
+#     not yet bound, transient during ExecStart race).
+#   * `-o /dev/null` discards the response body so journald only sees
+#     the final timeout line, not 900 s of JSON.
+#   * On success: shell exits 0 -> unit marked active.
+#   * On timeout: shell exits 1 -> unit marked failed AND, per
+#     systemd.service(5), Restart=on-failure fires because ExecStartPost
+#     is one of the "service processes" covered by Restart=. That is
+#     what produces the retry loop documented above under StartLimit*.
+#
+# Poll budget: 30 iterations x 30 s = 900 s. This MUST match
+# models.autoload_timeout_s (900.0) from config.yaml. If you increase
+# autoload_timeout_s, increase the iteration count here AND increase
+# TimeoutStartSec below in lockstep — otherwise systemd SIGKILLs the
+# poller mid-wait and reports a misleading "start operation timed out"
+# that masks the real (model-load) failure.
+#
+# No `$` in this command so systemd expansion cannot interfere. The
+# `for i in 1 2 ... 30` loop is parsed natively by /bin/sh — `seq`,
+# `jot`, and `$((...))` are avoided to keep the unit portable across
+# shell implementations.
+ExecStartPost=/bin/sh -c 'for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30; do curl -sf -o /dev/null --max-time 3 http://127.0.0.1:8080/readyz && exit 0; sleep 30; done; echo "readiness timeout: /readyz never returned 200 in 900s" >&2; exit 1'
+
+# systemd sends KillSignal to the main PID itself; no ExecStop= needed.
+TimeoutStopSec=150
+KillMode=mixed
+KillSignal=SIGTERM
+
+Restart=on-failure
+RestartSec=10
+# systemd >= 254: grow the delay 10 s -> 120 s over 5 steps instead of
+# hammering a failing start every 10 s. Older systemd ignores unknown keys.
+RestartSteps=5
+RestartMaxDelaySec=120
+# A ggml_abort core would be multi-GB (model mapped); crash.log + the
+# ctx_guard record are the useful artefacts.
+LimitCORE=0
+
+# 960 s = 900 s (ExecStartPost poll budget) + 60 s (ExecStart,
+# lifespan, and buffer). MUST be larger than the ExecStartPost poll
+# budget — see the comment above ExecStartPost. Do NOT lower this
+# without also lowering the poll budget (30 iterations x 30 s), or
+# systemd will SIGKILL the poller before it has had a chance to observe
+# /readyz succeeding, marking the unit failed on a successful start.
+TimeoutStartSec=960
+
+# ── Hardening ─────────────────────────────────────────────────────────────
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK
+LockPersonality=yes
+# llama.cpp and PyTorch JIT small kernels at load; W^X would break them.
+MemoryDenyWriteExecute=no
+
+StateDirectory=local-llm
+StateDirectoryMode=0700
+ReadWritePaths=-/home/deve-oops/AMB-OPT/local-llm-cloud/logs
+ReadWritePaths=-/home/deve-oops/AMB-OPT/local-llm-cloud/tmp
+ReadWritePaths=-/var/lib/local-llm
+ReadWritePaths=-/root/.cache/local-llm
+ReadWritePaths=-/root/.config/local-llm
+
+# Root keeps exactly what it needs to behave like root on the filesystem
+# and on the GPU. Everything else (SYS_ADMIN, SYS_MODULE, SYS_PTRACE,
+# NET_ADMIN, SETUID/SETGID, MKNOD) is dropped — that is where the
+# blast-radius reduction lives.
+CapabilityBoundingSet=CAP_DAC_READ_SEARCH CAP_DAC_OVERRIDE CAP_FOWNER CAP_IPC_LOCK CAP_SYS_NICE CAP_NET_BIND_SERVICE
+
+SyslogIdentifier=local-llm-server
+
+[Install]
+WantedBy=multi-user.target

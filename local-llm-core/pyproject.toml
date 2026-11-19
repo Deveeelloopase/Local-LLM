@@ -1,0 +1,145 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# local-llm-core/pyproject.toml — Production standard (PEP 621 + PEP 639)
+# ═══════════════════════════════════════════════════════════════════════════════
+# All metadata is static here. `setup.py` exists ONLY to compile the optional
+# `_fast.c` C extension (AVX2/NEON), because setuptools>=77 has no stable
+# [tool.setuptools.ext-modules] equivalent yet.
+#
+# EVERY runtime dependency is in [project.dependencies]. There are no extras —
+# one `pip install -e .` (or `pip install .`) yields a fully working install:
+# GGUF inference, BitNet/transformers path, monitoring, storage, compression,
+# async I/O — everything the package imports at runtime.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+[build-system]
+requires      = ["setuptools>=77.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+
+# ─── Project metadata ─────────────────────────────────────────────────────────
+[project]
+name             = "local-llm-core"
+version          = "1.0.0"
+description      = "Production-ready LLM inference engine (GGUF + BitNet, unified environment)"
+readme           = { file = "README.md", content-type = "text/markdown" }
+requires-python  = ">=3.10,<4.0"
+
+# SPDX license expression (PEP 639, required by setuptools>=77).
+# `LicenseRef-Proprietary` is the correct SPDX form for a custom closed-source
+# license. If you add a LICENSE file to the repo, add:
+#     license-files = ["LICENSE*"]
+# (empty by default — setuptools will autodiscover nothing).
+
+license          = "LicenseRef-Proprietary"
+
+authors          = [{ name = "Deveeelloopase", email = "dev@example.com" }]
+
+keywords = [
+    "llm", "inference", "gguf", "bitnet", "gpu", "vulkan", "quantization",
+    "llama", "local", "self-hosted", "ai",
+]
+
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS :: MacOS X",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
+
+
+# ─── Runtime dependencies — ALL of them, no extras ────────────────────────────
+# Anything imported by `local_llm_core/` at runtime belongs here. Nothing hides
+# behind an `extras_require` key.
+dependencies = [
+    # Primary GGUF inference backend
+    "llama-cpp-python",
+    "gguf",
+
+    # Transformers / BitNet backend (imported unconditionally by
+    # transformers_compat.py; guarded at the module level, but listed here
+    # so `bitnet.enabled: true` works without a second install step)
+    "torch",
+    "transformers",
+    "tokenizers",
+    "huggingface-hub",
+    "safetensors",
+    "sentencepiece",
+
+    # Numerical computing
+    "numpy",
+
+    # Configuration & validation
+    "pydantic",
+    "pyyaml",
+    "packaging",
+
+    # System monitoring
+    "psutil",
+    "prometheus-client",
+
+    # Async I/O & storage
+    "aiofiles",
+    "aiosqlite",
+    "httpx",
+
+    # Compression
+    "lz4",
+
+    # Utility
+    "structlog",
+    "filelock",
+    "regex",
+    "tqdm",
+
+    # Security
+    "defusedxml>=0.7.1",
+]
+
+
+# ─── Entry points ─────────────────────────────────────────────────────────────
+[project.scripts]
+local-llm-setup = "local_llm_core._setup_cli:main"
+
+
+# ─── URLs ─────────────────────────────────────────────────────────────────────
+[project.urls]
+Homepage  = "https://github.com/Deveeelloopase/Local-LLM"
+Source    = "https://github.com/Deveeelloopase/Local-LLM"
+Issues    = "https://github.com/Deveeelloopase/Local-LLM/issues"
+Changelog = "https://github.com/Deveeelloopase/Local-LLM/releases"
+
+
+# ─── Setuptools — package discovery + non-Python files ────────────────────────
+[tool.setuptools]
+include-package-data = true
+zip-safe             = false
+
+[tool.setuptools.packages.find]
+where   = ["."]
+include = ["local_llm_core", "local_llm_core.*"]
+exclude = ["tests", "tests.*", "examples", "examples.*", "scripts", "docs"]
+
+[tool.setuptools.package-data]
+local_llm_core = [
+    "*.so", "*.dylib", "*.dll", "*.pyd",
+    "config.yaml.example",
+    "py.typed",
+    "scripts/*.sh",
+    "scripts/*.py",
+]
+
+
+# ─── Pytest (inert unless pytest is installed by you) ─────────────────────────
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths    = ["tests"]

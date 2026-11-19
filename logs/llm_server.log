@@ -1,0 +1,540 @@
+Starting...
+[2026-11-16 14:49:30]  INFO      api_server            Log format: minimal → /home/deve-oops/AMB-OPT/local-llm-cloud/logs/llm_server.log
+[2026-11-16 14:49:30]  INFO      api_server            ⚡ Local LLM Cloud v1.0.0 starting
+[2026-11-16 14:49:30]  INFO      api_server            BitNet enabled: False
+[2026-11-16 14:49:30]  INFO      uvicorn.error         Started server process [231641]
+[2026-11-16 14:49:30]  INFO      uvicorn.error         Waiting for application startup.
+[2026-11-16 14:49:30]  INFO      api_server            ╔══ Local LLM Cloud v1.0.0 starting (pid=231641) ══╗
+[2026-11-16 14:49:30]  INFO      api_server            === Running startup validation ===
+[2026-11-16 14:49:30]  INFO      api_server            ✓ llama-cpp-python available
+[2026-11-16 14:49:30]  INFO      api_server            ✓ aiosqlite available
+[2026-11-16 14:49:30]  INFO      api_server            ✓ SPECTRE PYTHONPATH applied
+[2026-11-16 14:49:30]  INFO      model_unified_env     BitNetState loaded from /home/deve-oops/.config/local-llm/bitnet_state.json (available=False)
+[2026-11-16 14:49:30]  INFO      api_server            ✓ Model: loader ready  (profile='qwen3-8b'  backend=gguf)
+[2026-11-16 14:49:30]  INFO      api_server            === Startup validation passed ===
+[2026-11-16 14:49:31]  INFO      hardware_detector     Starting hardware detection ...
+[2026-11-16 14:49:32]  INFO      hardware_detector     Adaptive facts: ram_channels=1  bw_theoretical=19.2 GB/s  gtt_total=6928 bw_measured=4.4 GB/s  llama_cpp_backends=['gpu', 'cpu']  gpu_offload=True
+[2026-11-16 14:49:32]  INFO      hardware_detector     Detection done: 1 GPU(s), primary=Advanced Micro Devices, Inc. [AMD/ATI] Picasso/Raven 2 [Radeon Vega Series / Radeon Vega Mobile Series] (rev c1), recommended=rocm
+[2026-11-16 14:49:32]  INFO      api_server            GPU detection: rocm (1 GPU(s))
+[2026-11-16 14:49:32]  INFO      api_server            Memory budget: vram_target=0.95 ram_target=0.75 (source=memory.ram_utilization_target)
+[2026-11-16 14:49:32]  INFO      vram_manager          VRAMManager: 2.1 GB total, target util=95.0%, defrag threshold=30.0%, bg interval=60.0s, cuda=False, mps=False
+[2026-11-16 14:49:32]  INFO      vram_manager          Background defrag thread started (interval=60.0s)
+[2026-11-16 14:49:32]  INFO      ram_optimizer         RAMOptimizer: max=10392 MB lz4=True max_mmaps=64 max_prefetch=16
+[2026-11-16 14:49:32]  INFO      swap_handler          SwapHandler: dir=/var/lib/local-llm/swap max=32.0GB compress=True recovered=0 entries
+[2026-11-16 14:49:32]  INFO      hybrid_manager        HybridMemoryManager: vram=2048MB ram=13856MB ssd=32768MB compress=True
+[2026-11-16 14:49:32]  WARNING   hardware_profiles     Bandwidth probe returned 4.4 GB/s = 23% of theory (19.2 GB/s) — below the 30% plausibility floor. The probe is almost certainly single-threaded or ran into cache contention; using theory. To fix: run the probe on all physical cores with a buffer larger than L3, several passes, median.
+[2026-11-16 14:49:32]  INFO      hardware_profiles     Bandwidth selection: 19.2 GB/s (theory (probe 23% < 30% floor))
+[2026-11-16 14:49:32]  INFO      hardware_profiles     target_tps=8.00 from tier_default (no bench, no model size yet — will refine after load)
+[2026-11-16 14:49:32]  INFO      hardware_profiles     UMA APU budget (carve-out ONLY): carve_out=2048 MB gtt=6928 MB (not used) reserve=200 MB
+[2026-11-16 14:49:32]  INFO      hardware_profiles     Applying profile‑specific overrides for 'apu_2gb': {'context_length': 4096, 'n_batch': 2048, 'n_parallel': 1, 'flash_attn': True, 'context_vs_layers_priority': 'layers', 'kv_cache_quant': 'q8_0', 'speculative_decoding': False, 'use_mlock': False}
+[2026-11-16 14:49:32]  INFO      hardware_profiles     Computed profile: name=apu_2gb target_tps=8.00 [tier_default] n_batch=2048/512 ctx=4096 kv=q8_0 n_parallel=1 spec=False priority=layers mlock=False [ram_ch=1 bw_meas=4.4 bw_theo=19.2 gtt=6928 eff_vram=6381]
+[2026-11-16 14:49:32]  INFO      model_loader          ModelLoader: bench file present at construction (tps=3.37) — applied to profile (source: tier_default → bench_file)
+[2026-11-16 14:49:32]  INFO      model_loader          ModelLoader profile=apu_2gb vram_budget=1745MB
+[2026-11-16 14:49:32]  INFO      drive_pipeline        CPUThrottler: 4 physical cores → 4 threads
+[2026-11-16 14:49:32]  INFO      drive_pipeline        All BLAS thread env vars → 4
+[2026-11-16 14:49:32]  INFO      model_loader          AsyncWeightPipeline disabled (model_loader.async_weight_pipeline_enabled=false) — no madvise prefetch thread will run. The prefetch guesses layer byte ranges from file size with no feedback from llama.cpp, so on memory-bandwidth-bound hardware it competes with decode rather than helping it. See config.yaml's model_loader.async_weight_pipeline_enabled comment for how to benchmark a change.
+[2026-11-16 14:49:32]  INFO      api_server            Kernels subsystem: enabled=False
+[2026-11-16 14:49:32]  INFO      inference_engine      BitNet disabled by config — skipping BitNet loader
+[2026-11-16 14:49:32]  INFO      inference_engine      Drive pipeline active
+[2026-11-16 14:49:32]  INFO      scheduler             Scheduler initialization starting...
+[2026-11-16 14:49:32]  INFO      scheduler             Scheduler AIMD config: target_tps=3.1 batch=[1,1] interval=5.0s hysteresis=2 margins=[0.85, 0.95]
+[2026-11-16 14:49:32]  WARNING   scheduler             Scheduler queue limits: per_priority=64 total=256
+[2026-11-16 14:49:32]  INFO      scheduler             Priority weights configured: {'LOW': 1, 'NORMAL': 2, 'HIGH': 4, 'URGENT': 8} (ratio: 8.0:1)
+[2026-11-16 14:49:32]  WARNING   scheduler             Scheduler preemption persistence: disabled (in-memory only)
+[2026-11-16 14:49:32]  INFO      scheduler             Scheduler initialized: batch=1 queue=[64,256] prune_interval=10.0s preempt_persist=disabled thermal_throttle=inactive
+[2026-11-16 14:49:32]  INFO      inference_engine      UniversalKernelManager disabled (kernels.enabled=false) — GGUF path does not use PyTorch kernels
+[2026-11-16 14:49:32]  INFO      inference_engine      Faulthandler enabled → /var/lib/local-llm/crash.log
+[2026-11-16 14:49:32]  INFO      inference_engine      Native llama.cpp log → /var/lib/local-llm/llama_native.log
+[2026-11-16 14:49:32]  WARNING   inference_engine      _auto_register_bitnet_from_state: BitNet disabled — skipping
+[2026-11-16 14:49:32]  INFO      inference_engine      InferenceEngine v1.0.0 initialised (GGUF + BitNet, unified)
+[2026-11-16 14:49:32]  INFO      inference_engine      Continuous batching enabled in config: n_seq_max=1 kv_unified=True (batched engine will initialize on first generate_stream call once a model is loaded)
+[2026-11-16 14:49:32]  INFO      inference_engine      Scheduler start task enqueued
+[2026-11-16 14:49:32]  INFO      inference_engine      Slot health check started
+[2026-11-16 14:49:32]  INFO      api_server            ✓ GPU: rocm (1)
+[2026-11-16 14:49:32]  INFO      scheduler             Scheduler background tasks started
+[2026-11-16 14:49:33]  INFO      telemetry             Telemetry collection started (base interval=5.0s)
+[2026-11-16 14:49:33]  WARNING   _internal             Log handler reaper task started
+[2026-11-16 14:49:33]  INFO      api_server            Autoload order: reserved (primary) first, then residual (draft)
+[2026-11-16 14:49:33]  INFO      model_loader          Load [74aa1b8f]: model_id='qwen3-8b' path='/home/deve-oops/models/Qwen3-8B-Q4_K_M.gguf'
+[2026-11-16 14:49:33]  INFO      model_loader          Pre‑flight: model='qwen3-8b' size=4794.9MB required=5082MB usable=45900MB est TPS=3.03 status=comfortable
+[2026-11-16 14:49:33]  INFO      model_loader          Load [74aa1b8f]: initiating load
+[2026-11-16 14:49:33]  INFO      model_loader          Skipping NVMe sysctls (system.allow_kernel_tuning=false) — dirty_* / vfs_cache_pressure left at host defaults
+[2026-11-16 14:49:33]  INFO      model_loader          Context sizing for 'qwen3-8b': n_ctx_train=40960, profile_floor=4096, kv_bytes/token=78336, computed=4096, chosen=4096 (mc.context_length=0)
+[2026-11-16 14:49:34]  INFO      drive_pipeline        NVMe advisor: model=4794MB  ram_free=7788MB
+[2026-11-16 14:49:34]  INFO      drive_pipeline        NVMe: SEQUENTIAL only (model=4794MB > 40% of free RAM=7788MB — WILLNEED would duplicate weights the GPU may already hold)
+[2026-11-16 14:49:34]  INFO      layer_streamer        Backend: llama_cpp
+[2026-11-16 14:49:34]  INFO      layer_streamer        AdaptiveLoader: cpus=logical:8 physical:4 threads=4 batch_threads=4 parallel=1
+[2026-11-16 14:49:34]  INFO      layer_streamer        Load attempt 1/5: n_ctx=4096 n_batch=2048 n_ubatch=512 gpu=36 parallel=1
+[2026-11-16 14:49:34]  INFO      capabilities          llama-cpp-python caps: version=0.3.36 gpu_offload=True cache=LlamaRAMCache longest_prefix=True scores_bloat=True batch_api=False | continuous_batching: n_seq_max=True kv_unified=True llama_batch=True(llama_cpp._internals.LlamaBatch) add_sequence=True ctx_decode=True seq_rm=True params_default(n_seq_max=1 kv_unified=False)
+[2026-11-16 14:49:34]  INFO      inference_engine      LeanLlama active: stripping scores from save_state (llama-cpp-python 0.3.36, saves n_tokens×vocab×4 B per cached prefix)
+[2026-11-16 14:49:34]  INFO      conversation_store    Conversation store: postgresql initialized (pool size=10)
+[2026-11-16 14:49:34]  INFO      key_store             KeyStore initialized: backend=postgresql
+[2026-11-16 14:49:34]  INFO      api_server            ✓ KeyStore enabled
+[2026-11-16 14:49:34]  INFO      suspend_inhibitor     SuspendInhibitor: active (sleep:idle:handle-lid-switch:handle-suspend-key:handle-hibernate-key:handle-power-key) — host will not suspend/idle-sleep while this process runs.
+[2026-11-16 14:49:34]  INFO      api_server            ╚══ Ready  GPUs=1  CPU=4C/8T  RAM=13856MB  profile=apu_2gb  auth=keystore ══╝
+[2026-11-16 14:49:34]  INFO      api_server            ════════════════════════════════════════════════════════════════════════════════════════════════════
+[2026-11-16 14:49:34]  INFO      uvicorn.error         Application startup complete.
+[2026-11-16 14:49:34]  INFO      uvicorn.error         Uvicorn running on http://127.0.0.1:8080 (Press CTRL+C to quit)
+[2026-11-16 14:49:43]  INFO      layer_streamer        ✓ Load successful in 9.46s | model=Qwen3-8B-Q4_K_M.gguf gpu=req=36 actual=? | ctx=req=4096 actual=4096 | batch=2048/512 parallel=1
+[2026-11-16 14:49:43]  INFO      layer_streamer        LlamaRAMCache attached (capacity=128 MB) — longest-prefix lookup active
+[2026-11-16 14:49:43]  INFO      model_loader          VRAM tracker: skipping bookkeeping for 'qwen3-8b' (est 4794 MB, carve-out budget 1745 MB, GTT total 6928 MB). Model is running from GTT-addressable RAM, not the carve-out — see /v1/metrics for the driver-reported allocation.
+[2026-11-16 14:49:43]  INFO      model_loader          Loaded 'qwen3-8b' 9.7s | backend=llama_cpp | gpu=36/36 | strategy=manual | vram=4794MB
+[2026-11-16 14:49:43]  INFO      model_loader          Model 'qwen3-8b' loaded in 10.54s | gpu=36/36
+[2026-11-16 14:49:43]  INFO      api_server            ✓ Autoloaded: qwen3-8b (4800 MB)
+[2026-11-16 14:49:43]  INFO      inference_engine      Batched engine device budget: 8673 MB (carve-out/VRAM 1745 + GTT 6928)
+[2026-11-16 14:49:43]  INFO      batched_engine        BatchedInferenceEngine: n_seq_max=1 (ctx=1, pf_reserved=0) n_ctx=4096 n_batch=2048 n_vocab=151936 eos=151645 prefill_chunk=1024
+[2026-11-16 14:49:43]  INFO      inference_engine      BatchedInferenceEngine initialized: n_seq_max=1 kv_unified=True prefill_chunk=1024 pf_enabled=False
+[2026-11-16 14:49:43]  INFO      batched_engine        admit seq_id=0 rid=warmup-q prompt_len=1 reused=0
+[2026-11-16 14:49:43]  INFO      api_server            Runtime limits: tier=small decode_tps=3.37 prefill_tps=0.00 ctx=4096 resume_chunk=809 response=1618 idle=600s
+[2026-11-16 14:49:44]  INFO      api_server            ✓ Warmed up: qwen3-8b
+[2026-11-16 14:49:45]  INFO      batched_engine        evict seq=0 rid=warmup-q gen=1 retained=2
+[2026-11-16 14:52:28]  INFO      performance_analyzer  Configuration loaded from /home/deve-oops/AMB-OPT/local-llm-cloud/local-llm-server/config.yaml
+[2026-11-16 14:52:50]  INFO      batched_engine        admit seq_id=0 rid=41a55710 prompt_len=13 reused=0
+[2026-11-16 14:52:59]  INFO      batched_engine        evict seq=0 rid=41a55710 gen=12 retained=24
+[2026-11-16 14:52:59]  INFO      api_server            POST /v1/chat/completions → 200  8176.3ms  tok=11  ttft=1403ms  dec_tps=1.48  key=cli  id=41a55710
+[2026-11-16 14:52:59]  INFO      vram_manager          VRAM defragmentation is a no-op on this hardware (no CUDA / no MPS backend); skipping defrag calls silently from now on
+[2026-11-16 14:54:12]  INFO      api_server            Ignoring unsigned/mismatched X-Session-ID header — clients must send the signed value from the Set-Cookie response. Falling back to signed cookie.
+[2026-11-16 14:54:13]  INFO      batched_engine        admit seq_id=0 rid=1a9f53a7 prompt_len=40 reused=0
+[2026-11-16 14:54:48]  WARNING   telemetry             ANOMALY [warning]: gpu_0_temp=75.00 (z=3.3, mean=57.14)
+[2026-11-16 14:56:31]  INFO      batched_engine        evict seq=0 rid=1a9f53a7 gen=226 retained=265
+[2026-11-16 14:56:31]  INFO      batched_engine        admit seq_id=0 rid=3ceeb609 prompt_len=37 reused=0
+[2026-11-16 14:56:31]  INFO      api_server            POST /v1/chat/smart → 200  138565.1ms  tok=225  ttft=2545ms  dec_tps=1.65  key=web3  id=1a9f53a7
+[2026-11-16 14:57:00]  INFO      batched_engine        evict seq=0 rid=3ceeb609 gen=41 retained=77
+[2026-11-16 14:57:00]  INFO      api_server            POST /v1/chat/completions → 200  144757.9ms  tok=40  ttft=118396ms  dec_tps=1.48  key=cli  id=3ceeb609
+[2026-11-16 14:59:55]  INFO      performance_analyzer  Configuration loaded from /home/deve-oops/AMB-OPT/local-llm-cloud/local-llm-server/config.yaml
+[2026-11-16 15:00:38]  INFO      batched_engine        admit seq_id=0 rid=eada33dc prompt_len=94 reused=33
+[2026-11-16 15:01:37]  INFO      batched_engine        evict seq=0 rid=eada33dc gen=88 retained=181
+[2026-11-16 15:01:37]  INFO      api_server            POST /v1/chat/completions → 200  58880.6ms  tok=87  ttft=3871ms  dec_tps=1.56  key=cli  id=eada33dc
+[2026-11-16 15:01:57]  INFO      uvicorn.error         Shutting down
+[2026-11-16 15:01:57]  INFO      uvicorn.error         Waiting for application shutdown.
+[2026-11-16 15:01:57]  INFO      api_server            Shutting down…
+[2026-11-16 15:01:57]  INFO      system_optimizer      [DRY-RUN] would restore 0 baseline entries
+[2026-11-16 15:01:57]  WARNING   _internal             Log handler reaper task stopped
+[2026-11-16 15:01:57]  INFO      suspend_inhibitor     SuspendInhibitor: released.
+[2026-11-16 15:01:57]  INFO      inference_engine      InferenceEngine shutdown (req=4 tok=367 err=0 oom=0)
+[2026-11-16 15:01:57]  INFO      vram_manager          Shutting down VRAMManager...
+[2026-11-16 15:01:57]  INFO      vram_manager          Background defrag thread stopped
+[2026-11-16 15:01:57]  INFO      vram_manager          VRAMManager shutdown complete
+[2026-11-16 15:01:57]  INFO      hybrid_manager        HybridMemoryManager shutdown complete (read_errors=0 write_errors=0)
+[2026-11-16 15:01:57]  INFO      ram_optimizer         RAMOptimizer: closed 0 mmap handles
+[2026-11-16 15:01:57]  INFO      ram_optimizer         RAMOptimizer shutdown complete
+[2026-11-16 15:01:57]  INFO      swap_handler          SwapHandler shutdown: 0 entries, 0.0 MB used
+[2026-11-16 15:01:57]  INFO      telemetry             Telemetry collection stopped
+[2026-11-16 15:01:57]  INFO      model_loader          Unloading model 'qwen3-8b'
+[2026-11-16 15:01:57]  INFO      model_loader          Model 'qwen3-8b' unloaded (clean=True)
+[2026-11-16 15:01:57]  INFO      key_store             KeyStore database connection closed
+[2026-11-16 15:01:57]  INFO      api_server            Server stopped.
+[2026-11-16 15:01:57]  INFO      uvicorn.error         Application shutdown complete.
+[2026-11-16 15:01:57]  INFO      uvicorn.error         Finished server process [231641]
+[2026-11-16 15:02:09]  INFO      api_server            Log format: minimal → /home/deve-oops/AMB-OPT/local-llm-cloud/logs/llm_server.log
+[2026-11-16 15:02:09]  INFO      api_server            ⚡ Local LLM Cloud v1.0.0 starting
+[2026-11-16 15:02:09]  INFO      api_server            BitNet enabled: False
+[2026-11-16 15:02:09]  INFO      uvicorn.error         Started server process [240059]
+[2026-11-16 15:02:09]  INFO      uvicorn.error         Waiting for application startup.
+[2026-11-16 15:02:09]  INFO      api_server            ╔══ Local LLM Cloud v1.0.0 starting (pid=240059) ══╗
+[2026-11-16 15:02:09]  INFO      api_server            === Running startup validation ===
+[2026-11-16 15:02:09]  INFO      api_server            ✓ llama-cpp-python available
+[2026-11-16 15:02:09]  INFO      api_server            ✓ aiosqlite available
+[2026-11-16 15:02:09]  INFO      api_server            ✓ SPECTRE PYTHONPATH applied
+[2026-11-16 15:02:09]  INFO      model_unified_env     BitNetState loaded from /home/deve-oops/.config/local-llm/bitnet_state.json (available=False)
+[2026-11-16 15:02:10]  INFO      api_server            ✓ Model: loader ready  (profile='qwen3-4b'  backend=gguf)
+[2026-11-16 15:02:10]  INFO      api_server            === Startup validation passed ===
+[2026-11-16 15:02:10]  INFO      hardware_detector     Starting hardware detection ...
+[2026-11-16 15:02:12]  INFO      hardware_detector     Adaptive facts: ram_channels=1  bw_theoretical=19.2 GB/s  gtt_total=6928 bw_measured=3.8 GB/s  llama_cpp_backends=['gpu', 'cpu']  gpu_offload=True
+[2026-11-16 15:02:12]  INFO      hardware_detector     Detection done: 1 GPU(s), primary=Advanced Micro Devices, Inc. [AMD/ATI] Picasso/Raven 2 [Radeon Vega Series / Radeon Vega Mobile Series] (rev c1), recommended=rocm
+[2026-11-16 15:02:12]  INFO      api_server            GPU detection: rocm (1 GPU(s))
+[2026-11-16 15:02:12]  INFO      api_server            Memory budget: vram_target=0.95 ram_target=0.75 (source=memory.ram_utilization_target)
+[2026-11-16 15:02:12]  INFO      vram_manager          VRAMManager: 2.1 GB total, target util=95.0%, defrag threshold=30.0%, bg interval=60.0s, cuda=False, mps=False
+[2026-11-16 15:02:12]  INFO      vram_manager          Background defrag thread started (interval=60.0s)
+[2026-11-16 15:02:12]  INFO      ram_optimizer         RAMOptimizer: max=10392 MB lz4=True max_mmaps=64 max_prefetch=16
+[2026-11-16 15:02:12]  INFO      swap_handler          SwapHandler: dir=/var/lib/local-llm/swap max=32.0GB compress=True recovered=0 entries
+[2026-11-16 15:02:12]  INFO      hybrid_manager        HybridMemoryManager: vram=2048MB ram=13856MB ssd=32768MB compress=True
+[2026-11-16 15:02:12]  WARNING   hardware_profiles     Bandwidth probe returned 3.8 GB/s = 20% of theory (19.2 GB/s) — below the 30% plausibility floor. The probe is almost certainly single-threaded or ran into cache contention; using theory. To fix: run the probe on all physical cores with a buffer larger than L3, several passes, median.
+[2026-11-16 15:02:12]  INFO      hardware_profiles     Bandwidth selection: 19.2 GB/s (theory (probe 20% < 30% floor))
+[2026-11-16 15:02:12]  INFO      hardware_profiles     target_tps=8.00 from tier_default (no bench, no model size yet — will refine after load)
+[2026-11-16 15:02:12]  INFO      hardware_profiles     UMA APU budget (carve-out ONLY): carve_out=2048 MB gtt=6928 MB (not used) reserve=200 MB
+[2026-11-16 15:02:12]  INFO      hardware_profiles     Applying profile‑specific overrides for 'apu_2gb': {'context_length': 4096, 'n_batch': 2048, 'n_parallel': 1, 'flash_attn': True, 'context_vs_layers_priority': 'layers', 'kv_cache_quant': 'q8_0', 'speculative_decoding': False, 'use_mlock': False}
+[2026-11-16 15:02:12]  INFO      hardware_profiles     Computed profile: name=apu_2gb target_tps=8.00 [tier_default] n_batch=2048/512 ctx=4096 kv=q8_0 n_parallel=1 spec=False priority=layers mlock=False [ram_ch=1 bw_meas=3.8 bw_theo=19.2 gtt=6928 eff_vram=6381]
+[2026-11-16 15:02:12]  INFO      model_loader          ModelLoader: bench file present at construction (tps=3.37) — applied to profile (source: tier_default → bench_file)
+[2026-11-16 15:02:12]  INFO      model_loader          ModelLoader profile=apu_2gb vram_budget=1745MB
+[2026-11-16 15:02:12]  INFO      drive_pipeline        CPUThrottler: 4 physical cores → 4 threads
+[2026-11-16 15:02:12]  INFO      drive_pipeline        All BLAS thread env vars → 4
+[2026-11-16 15:02:12]  INFO      model_loader          AsyncWeightPipeline disabled (model_loader.async_weight_pipeline_enabled=false) — no madvise prefetch thread will run. The prefetch guesses layer byte ranges from file size with no feedback from llama.cpp, so on memory-bandwidth-bound hardware it competes with decode rather than helping it. See config.yaml's model_loader.async_weight_pipeline_enabled comment for how to benchmark a change.
+[2026-11-16 15:02:12]  INFO      api_server            Kernels subsystem: enabled=False
+[2026-11-16 15:02:12]  INFO      inference_engine      BitNet disabled by config — skipping BitNet loader
+[2026-11-16 15:02:12]  INFO      inference_engine      Drive pipeline active
+[2026-11-16 15:02:12]  INFO      scheduler             Scheduler initialization starting...
+[2026-11-16 15:02:12]  INFO      scheduler             Scheduler AIMD config: target_tps=3.1 batch=[1,1] interval=5.0s hysteresis=2 margins=[0.85, 0.95]
+[2026-11-16 15:02:12]  WARNING   scheduler             Scheduler queue limits: per_priority=64 total=256
+[2026-11-16 15:02:12]  INFO      scheduler             Priority weights configured: {'LOW': 1, 'NORMAL': 2, 'HIGH': 4, 'URGENT': 8} (ratio: 8.0:1)
+[2026-11-16 15:02:12]  WARNING   scheduler             Scheduler preemption persistence: disabled (in-memory only)
+[2026-11-16 15:02:12]  INFO      scheduler             Scheduler initialized: batch=1 queue=[64,256] prune_interval=10.0s preempt_persist=disabled thermal_throttle=inactive
+[2026-11-16 15:02:12]  INFO      inference_engine      UniversalKernelManager disabled (kernels.enabled=false) — GGUF path does not use PyTorch kernels
+[2026-11-16 15:02:12]  INFO      inference_engine      Faulthandler enabled → /var/lib/local-llm/crash.log
+[2026-11-16 15:02:12]  INFO      inference_engine      Native llama.cpp log → /var/lib/local-llm/llama_native.log
+[2026-11-16 15:02:12]  WARNING   inference_engine      _auto_register_bitnet_from_state: BitNet disabled — skipping
+[2026-11-16 15:02:12]  INFO      inference_engine      InferenceEngine v1.0.0 initialised (GGUF + BitNet, unified)
+[2026-11-16 15:02:12]  INFO      inference_engine      Continuous batching enabled in config: n_seq_max=1 kv_unified=True (batched engine will initialize on first generate_stream call once a model is loaded)
+[2026-11-16 15:02:12]  INFO      inference_engine      Scheduler start task enqueued
+[2026-11-16 15:02:12]  INFO      inference_engine      Slot health check started
+[2026-11-16 15:02:12]  INFO      api_server            ✓ GPU: rocm (1)
+[2026-11-16 15:02:12]  INFO      scheduler             Scheduler background tasks started
+[2026-11-16 15:02:12]  INFO      telemetry             Telemetry collection started (base interval=5.0s)
+[2026-11-16 15:02:12]  WARNING   _internal             Log handler reaper task started
+[2026-11-16 15:02:12]  INFO      api_server            Autoload order: reserved (primary) first, then residual (draft)
+[2026-11-16 15:02:12]  INFO      model_loader          Load [804dad0e]: model_id='qwen3-4b' path='/home/deve-oops/models/Qwen3-4B-Q4_K_M.gguf'
+[2026-11-16 15:02:12]  INFO      model_loader          Pre‑flight: model='qwen3-4b' size=2381.6MB required=2561MB usable=45900MB est TPS=3.03 status=comfortable
+[2026-11-16 15:02:12]  INFO      model_loader          Load [804dad0e]: initiating load
+[2026-11-16 15:02:12]  INFO      model_loader          Skipping NVMe sysctls (system.allow_kernel_tuning=false) — dirty_* / vfs_cache_pressure left at host defaults
+[2026-11-16 15:02:13]  INFO      model_loader          Context sizing for 'qwen3-4b': n_ctx_train=40960, profile_floor=4096, kv_bytes/token=78336, computed=4096, chosen=4096 (mc.context_length=0)
+[2026-11-16 15:02:13]  INFO      drive_pipeline        NVMe advisor: model=2381MB  ram_free=7905MB
+[2026-11-16 15:02:13]  INFO      drive_pipeline        NVMe: WILLNEED — pre-caching 2381MB (fits 40% of free RAM)
+[2026-11-16 15:02:13]  INFO      layer_streamer        Backend: llama_cpp
+[2026-11-16 15:02:14]  INFO      layer_streamer        AdaptiveLoader: cpus=logical:8 physical:4 threads=4 batch_threads=4 parallel=1
+[2026-11-16 15:02:14]  INFO      layer_streamer        Load attempt 1/5: n_ctx=4096 n_batch=2048 n_ubatch=512 gpu=36 parallel=1
+[2026-11-16 15:02:14]  INFO      capabilities          llama-cpp-python caps: version=0.3.36 gpu_offload=True cache=LlamaRAMCache longest_prefix=True scores_bloat=True batch_api=False | continuous_batching: n_seq_max=True kv_unified=True llama_batch=True(llama_cpp._internals.LlamaBatch) add_sequence=True ctx_decode=True seq_rm=True params_default(n_seq_max=1 kv_unified=False)
+[2026-11-16 15:02:14]  INFO      inference_engine      LeanLlama active: stripping scores from save_state (llama-cpp-python 0.3.36, saves n_tokens×vocab×4 B per cached prefix)
+[2026-11-16 15:02:14]  INFO      conversation_store    Conversation store: postgresql initialized (pool size=10)
+[2026-11-16 15:02:14]  INFO      key_store             KeyStore initialized: backend=postgresql
+[2026-11-16 15:02:14]  INFO      api_server            ✓ KeyStore enabled
+[2026-11-16 15:02:14]  INFO      suspend_inhibitor     SuspendInhibitor: active (sleep:idle:handle-lid-switch:handle-suspend-key:handle-hibernate-key:handle-power-key) — host will not suspend/idle-sleep while this process runs.
+[2026-11-16 15:02:14]  INFO      api_server            ╚══ Ready  GPUs=1  CPU=4C/8T  RAM=13856MB  profile=apu_2gb  auth=keystore ══╝
+[2026-11-16 15:02:14]  INFO      api_server            ════════════════════════════════════════════════════════════════════════════════════════════════════
+[2026-11-16 15:02:14]  INFO      uvicorn.error         Application startup complete.
+[2026-11-16 15:02:14]  INFO      uvicorn.error         Uvicorn running on http://127.0.0.1:8080 (Press CTRL+C to quit)
+[2026-11-16 15:02:18]  INFO      performance_analyzer  Configuration loaded from /home/deve-oops/AMB-OPT/local-llm-cloud/local-llm-server/config.yaml
+[2026-11-16 15:02:19]  INFO      layer_streamer        ✓ Load successful in 5.75s | model=Qwen3-4B-Q4_K_M.gguf gpu=req=36 actual=? | ctx=req=4096 actual=4096 | batch=2048/512 parallel=1
+[2026-11-16 15:02:19]  INFO      layer_streamer        LlamaRAMCache attached (capacity=128 MB) — longest-prefix lookup active
+[2026-11-16 15:02:19]  INFO      model_loader          VRAM tracker: skipping bookkeeping for 'qwen3-4b' (est 2381 MB, carve-out budget 1745 MB, GTT total 6928 MB). Model is running from GTT-addressable RAM, not the carve-out — see /v1/metrics for the driver-reported allocation.
+[2026-11-16 15:02:19]  INFO      model_loader          Loaded 'qwen3-4b' 6.2s | backend=llama_cpp | gpu=36/36 | strategy=manual | vram=2381MB
+[2026-11-16 15:02:19]  INFO      model_loader          Model 'qwen3-4b' loaded in 7.08s | gpu=36/36
+[2026-11-16 15:02:19]  INFO      api_server            ✓ Autoloaded: qwen3-4b (4800 MB)
+[2026-11-16 15:02:19]  INFO      inference_engine      Batched engine device budget: 8673 MB (carve-out/VRAM 1745 + GTT 6928)
+[2026-11-16 15:02:19]  INFO      batched_engine        BatchedInferenceEngine: n_seq_max=1 (ctx=1, pf_reserved=0) n_ctx=4096 n_batch=2048 n_vocab=151936 eos=151645 prefill_chunk=1024
+[2026-11-16 15:02:19]  INFO      inference_engine      BatchedInferenceEngine initialized: n_seq_max=1 kv_unified=True prefill_chunk=1024 pf_enabled=False
+[2026-11-16 15:02:19]  INFO      batched_engine        admit seq_id=0 rid=warmup-q prompt_len=1 reused=0
+[2026-11-16 15:02:20]  INFO      api_server            ✓ Warmed up: qwen3-4b
+[2026-11-16 15:02:20]  INFO      api_server            Runtime limits: tier=small decode_tps=3.37 prefill_tps=0.00 ctx=4096 resume_chunk=809 response=1618 idle=600s
+[2026-11-16 15:02:21]  INFO      batched_engine        evict seq=0 rid=warmup-q gen=1 retained=2
+[2026-11-16 15:03:53]  INFO      batched_engine        admit seq_id=0 rid=8985c38e prompt_len=208 reused=0
+[2026-11-16 15:05:06]  INFO      api_server            Ignoring unsigned/mismatched X-Session-ID header — clients must send the signed value from the Set-Cookie response. Falling back to signed cookie.
+[2026-11-16 15:05:56]  INFO      batched_engine        evict seq=0 rid=8985c38e gen=178 retained=385
+[2026-11-16 15:05:56]  INFO      batched_engine        admit seq_id=0 rid=a2d29fd6 prompt_len=280 reused=0
+[2026-11-16 15:05:56]  INFO      api_server            POST /v1/chat/completions → 200  122526.8ms  tok=177  ttft=14233ms  dec_tps=1.63  key=cli  id=8985c38e
+[2026-11-16 15:05:56]  INFO      vram_manager          VRAM defragmentation is a no-op on this hardware (no CUDA / no MPS backend); skipping defrag calls silently from now on
+[2026-11-16 15:06:03]  WARNING   telemetry             ANOMALY [warning]: gpu_0_temp=68.00 (z=3.1, mean=55.68)
+[2026-11-16 15:08:04]  INFO      batched_engine        evict seq=0 rid=a2d29fd6 gen=252 retained=531
+[2026-11-16 15:08:04]  INFO      api_server            POST /v1/chat/smart → 200  178631.1ms  tok=251  ttft=58862ms  dec_tps=2.09  key=web3  id=a2d29fd6
+[2026-11-16 15:11:17]  INFO      performance_analyzer  Configuration loaded from /home/deve-oops/AMB-OPT/local-llm-cloud/local-llm-server/config.yaml
+[2026-11-16 15:11:35]  INFO      uvicorn.error         Shutting down
+[2026-11-16 15:11:35]  INFO      uvicorn.error         Waiting for application shutdown.
+[2026-11-16 15:11:35]  INFO      api_server            Shutting down…
+[2026-11-16 15:11:35]  INFO      system_optimizer      [DRY-RUN] would restore 0 baseline entries
+[2026-11-16 15:11:35]  WARNING   _internal             Log handler reaper task stopped
+[2026-11-16 15:11:35]  INFO      suspend_inhibitor     SuspendInhibitor: released.
+[2026-11-16 15:11:35]  INFO      inference_engine      InferenceEngine shutdown (req=2 tok=430 err=0 oom=0)
+[2026-11-16 15:11:35]  INFO      vram_manager          Shutting down VRAMManager...
+[2026-11-16 15:11:35]  INFO      vram_manager          Background defrag thread stopped
+[2026-11-16 15:11:35]  INFO      vram_manager          VRAMManager shutdown complete
+[2026-11-16 15:11:35]  INFO      hybrid_manager        HybridMemoryManager shutdown complete (read_errors=0 write_errors=0)
+[2026-11-16 15:11:35]  INFO      ram_optimizer         RAMOptimizer: closed 0 mmap handles
+[2026-11-16 15:11:35]  INFO      ram_optimizer         RAMOptimizer shutdown complete
+[2026-11-16 15:11:35]  INFO      swap_handler          SwapHandler shutdown: 0 entries, 0.0 MB used
+[2026-11-16 15:11:35]  INFO      telemetry             Telemetry collection stopped
+[2026-11-16 15:11:35]  INFO      model_loader          Unloading model 'qwen3-4b'
+[2026-11-16 15:11:36]  INFO      model_loader          Model 'qwen3-4b' unloaded (clean=True)
+[2026-11-16 15:11:36]  INFO      key_store             KeyStore database connection closed
+[2026-11-16 15:11:36]  INFO      api_server            Server stopped.
+[2026-11-16 15:11:36]  INFO      uvicorn.error         Application shutdown complete.
+[2026-11-16 15:11:36]  INFO      uvicorn.error         Finished server process [240059]
+[2026-11-16 15:11:44]  INFO      api_server            Log format: minimal → /home/deve-oops/AMB-OPT/local-llm-cloud/logs/llm_server.log
+[2026-11-16 15:11:44]  INFO      api_server            ⚡ Local LLM Cloud v1.0.0 starting
+[2026-11-16 15:11:44]  INFO      api_server            BitNet enabled: False
+[2026-11-16 15:11:45]  INFO      uvicorn.error         Started server process [245337]
+[2026-11-16 15:11:45]  INFO      uvicorn.error         Waiting for application startup.
+[2026-11-16 15:11:45]  INFO      api_server            ╔══ Local LLM Cloud v1.0.0 starting (pid=245337) ══╗
+[2026-11-16 15:11:45]  INFO      api_server            === Running startup validation ===
+[2026-11-16 15:11:45]  INFO      api_server            ✓ llama-cpp-python available
+[2026-11-16 15:11:45]  INFO      api_server            ✓ aiosqlite available
+[2026-11-16 15:11:45]  INFO      api_server            ✓ SPECTRE PYTHONPATH applied
+[2026-11-16 15:11:45]  INFO      model_unified_env     BitNetState loaded from /home/deve-oops/.config/local-llm/bitnet_state.json (available=False)
+[2026-11-16 15:11:45]  INFO      api_server            ✓ Model: loader ready  (profile='qwen3-4b'  backend=gguf)
+[2026-11-16 15:11:45]  INFO      api_server            === Startup validation passed ===
+[2026-11-16 15:11:45]  INFO      hardware_detector     Starting hardware detection ...
+[2026-11-16 15:11:46]  INFO      hardware_detector     Adaptive facts: ram_channels=1  bw_theoretical=19.2 GB/s  gtt_total=6928 bw_measured=6.7 GB/s  llama_cpp_backends=['gpu', 'cpu']  gpu_offload=True
+[2026-11-16 15:11:46]  INFO      hardware_detector     Detection done: 1 GPU(s), primary=Advanced Micro Devices, Inc. [AMD/ATI] Picasso/Raven 2 [Radeon Vega Series / Radeon Vega Mobile Series] (rev c1), recommended=rocm
+[2026-11-16 15:11:46]  INFO      api_server            GPU detection: rocm (1 GPU(s))
+[2026-11-16 15:11:46]  INFO      api_server            Memory budget: vram_target=0.95 ram_target=0.75 (source=memory.ram_utilization_target)
+[2026-11-16 15:11:46]  INFO      vram_manager          VRAMManager: 2.1 GB total, target util=95.0%, defrag threshold=30.0%, bg interval=60.0s, cuda=False, mps=False
+[2026-11-16 15:11:46]  INFO      vram_manager          Background defrag thread started (interval=60.0s)
+[2026-11-16 15:11:46]  INFO      ram_optimizer         RAMOptimizer: max=10392 MB lz4=True max_mmaps=64 max_prefetch=16
+[2026-11-16 15:11:46]  INFO      swap_handler          SwapHandler: dir=/var/lib/local-llm/swap max=32.0GB compress=True recovered=0 entries
+[2026-11-16 15:11:46]  INFO      hybrid_manager        HybridMemoryManager: vram=2048MB ram=13856MB ssd=32768MB compress=True
+[2026-11-16 15:11:46]  INFO      hardware_profiles     Bandwidth selection: 6.7 GB/s (measurement (35% of theory))
+[2026-11-16 15:11:46]  INFO      hardware_profiles     target_tps=8.00 from tier_default (no bench, no model size yet — will refine after load)
+[2026-11-16 15:11:46]  INFO      hardware_profiles     UMA APU budget (carve-out ONLY): carve_out=2048 MB gtt=6928 MB (not used) reserve=200 MB
+[2026-11-16 15:11:46]  INFO      hardware_profiles     Applying profile‑specific overrides for 'apu_2gb': {'context_length': 4096, 'n_batch': 2048, 'n_parallel': 1, 'flash_attn': True, 'context_vs_layers_priority': 'layers', 'kv_cache_quant': 'q8_0', 'speculative_decoding': False, 'use_mlock': False}
+[2026-11-16 15:11:46]  INFO      hardware_profiles     Computed profile: name=apu_2gb target_tps=8.00 [tier_default] n_batch=2048/512 ctx=4096 kv=q8_0 n_parallel=1 spec=False priority=layers mlock=False [ram_ch=1 bw_meas=6.7 bw_theo=19.2 gtt=6928 eff_vram=6381]
+[2026-11-16 15:11:46]  INFO      model_loader          ModelLoader: bench file present at construction (tps=3.37) — applied to profile (source: tier_default → bench_file)
+[2026-11-16 15:11:46]  INFO      model_loader          ModelLoader profile=apu_2gb vram_budget=1745MB
+[2026-11-16 15:11:46]  INFO      drive_pipeline        CPUThrottler: 4 physical cores → 4 threads
+[2026-11-16 15:11:46]  INFO      drive_pipeline        All BLAS thread env vars → 4
+[2026-11-16 15:11:46]  INFO      model_loader          AsyncWeightPipeline disabled (model_loader.async_weight_pipeline_enabled=false) — no madvise prefetch thread will run. The prefetch guesses layer byte ranges from file size with no feedback from llama.cpp, so on memory-bandwidth-bound hardware it competes with decode rather than helping it. See config.yaml's model_loader.async_weight_pipeline_enabled comment for how to benchmark a change.
+[2026-11-16 15:11:46]  INFO      api_server            Kernels subsystem: enabled=False
+[2026-11-16 15:11:46]  INFO      inference_engine      BitNet disabled by config — skipping BitNet loader
+[2026-11-16 15:11:46]  INFO      inference_engine      Drive pipeline active
+[2026-11-16 15:11:46]  INFO      scheduler             Scheduler initialization starting...
+[2026-11-16 15:11:46]  INFO      scheduler             Scheduler AIMD config: target_tps=3.1 batch=[1,1] interval=5.0s hysteresis=2 margins=[0.85, 0.95]
+[2026-11-16 15:11:46]  WARNING   scheduler             Scheduler queue limits: per_priority=64 total=256
+[2026-11-16 15:11:46]  INFO      scheduler             Priority weights configured: {'LOW': 1, 'NORMAL': 2, 'HIGH': 4, 'URGENT': 8} (ratio: 8.0:1)
+[2026-11-16 15:11:46]  WARNING   scheduler             Scheduler preemption persistence: disabled (in-memory only)
+[2026-11-16 15:11:46]  INFO      scheduler             Scheduler initialized: batch=1 queue=[64,256] prune_interval=10.0s preempt_persist=disabled thermal_throttle=inactive
+[2026-11-16 15:11:46]  INFO      inference_engine      UniversalKernelManager disabled (kernels.enabled=false) — GGUF path does not use PyTorch kernels
+[2026-11-16 15:11:46]  INFO      inference_engine      Faulthandler enabled → /var/lib/local-llm/crash.log
+[2026-11-16 15:11:46]  INFO      inference_engine      Native llama.cpp log → /var/lib/local-llm/llama_native.log
+[2026-11-16 15:11:46]  WARNING   inference_engine      _auto_register_bitnet_from_state: BitNet disabled — skipping
+[2026-11-16 15:11:46]  INFO      inference_engine      InferenceEngine v1.0.0 initialised (GGUF + BitNet, unified)
+[2026-11-16 15:11:46]  INFO      inference_engine      Scheduler start task enqueued
+[2026-11-16 15:11:46]  INFO      inference_engine      Slot health check started
+[2026-11-16 15:11:46]  INFO      capabilities          llama-cpp-python caps: version=0.3.36 gpu_offload=True cache=LlamaRAMCache longest_prefix=True scores_bloat=True batch_api=False | continuous_batching: n_seq_max=True kv_unified=True llama_batch=True(llama_cpp._internals.LlamaBatch) add_sequence=True ctx_decode=True seq_rm=True params_default(n_seq_max=1 kv_unified=False)
+[2026-11-16 15:11:46]  INFO      scheduler             Scheduler background tasks started
+[2026-11-16 15:11:46]  INFO      memory_ledger         MemoryLedger: ram=13856MB avail=11417MB weights=2381MB kv/worker=306MB runtime/worker=300MB bw=19.2GB/s target_min_tps=1.0 cores/worker=2 n_seq_hint=8 → max_workers=2 (mem=5 bw=8 cpu=2)
+[2026-11-16 15:11:47]  INFO      w0                    worker starting: model=qwen3-4b port=40269
+[2026-11-16 15:11:53]  WARNING   w0                    BitLinear not found in transformers 4.52.0.dev0 (backend=standard). PATH B (packed model inference) unavailable. Use bitnet.cpp CLI (recommended) or install pinned commit.
+[2026-11-16 15:11:53]  INFO      w0                    Reconstructed SystemInfo from parent — skipped detect_all()
+[2026-11-16 15:11:54]  INFO      w0                      | ggml_vulkan: Found 1 Vulkan devices:
+[2026-11-16 15:11:54]  INFO      w0                      | ggml_vulkan: 0 = AMD Radeon Vega 10 Graphics (RADV RAVEN) (radv) | uma: 1 | fp16: 1 | bf16: 0 | fp4: 0 | warp size: 64 | shared memory: 65536 | int dot: 0 | matrix cores: none
+[2026-11-16 15:11:56]  INFO      w0                    BitNet enabled=False (from config.yaml bitnet.enabled)
+[2026-11-16 15:11:56]  WARNING   w0                    Scheduler queue limits: per_priority=64 total=256
+[2026-11-16 15:11:56]  WARNING   w0                    Scheduler preemption persistence: disabled (in-memory only)
+[2026-11-16 15:11:56]  WARNING   w0                    _auto_register_bitnet_from_state: BitNet disabled — skipping
+[2026-11-16 15:11:56]  INFO      w0                    worker: model loaded load=9.4s gpu_layers=req:36/actual:? ctx=4096 threads=4 batch=2048/512 kv=q8_0 fa=True, connecting to parent
+[2026-11-16 15:11:56]  INFO      handle                worker 0 ready pid=245492 load=9.4s gpu_layers=req:36/actual:? ctx=4096 threads=4 batch=2048/512 kv=q8_0 fa=True
+[2026-11-16 15:11:56]  INFO      supervisor            supervisor: worker 0 spawned
+[2026-11-16 15:11:56]  INFO      w0                    worker: handshake ok, entering serve loop (hb=1.00s)
+[2026-11-16 15:11:57]  INFO      w1                    worker starting: model=qwen3-4b port=40147
+[2026-11-16 15:12:03]  WARNING   w1                    BitLinear not found in transformers 4.52.0.dev0 (backend=standard). PATH B (packed model inference) unavailable. Use bitnet.cpp CLI (recommended) or install pinned commit.
+[2026-11-16 15:12:03]  INFO      w1                    Reconstructed SystemInfo from parent — skipped detect_all()
+[2026-11-16 15:12:04]  INFO      w1                      | ggml_vulkan: Found 1 Vulkan devices:
+[2026-11-16 15:12:04]  INFO      w1                      | ggml_vulkan: 0 = AMD Radeon Vega 10 Graphics (RADV RAVEN) (radv) | uma: 1 | fp16: 1 | bf16: 0 | fp4: 0 | warp size: 64 | shared memory: 65536 | int dot: 0 | matrix cores: none
+[2026-11-16 15:12:08]  INFO      w1                    BitNet enabled=False (from config.yaml bitnet.enabled)
+[2026-11-16 15:12:08]  WARNING   w1                    Scheduler queue limits: per_priority=64 total=256
+[2026-11-16 15:12:08]  WARNING   w1                    Scheduler preemption persistence: disabled (in-memory only)
+[2026-11-16 15:12:08]  WARNING   w1                    _auto_register_bitnet_from_state: BitNet disabled — skipping
+[2026-11-16 15:12:08]  INFO      w1                    worker: model loaded load=11.2s gpu_layers=req:36/actual:? ctx=4096 threads=4 batch=2048/512 kv=q8_0 fa=True, connecting to parent
+[2026-11-16 15:12:08]  INFO      handle                worker 1 ready pid=245583 load=11.2s gpu_layers=req:36/actual:? ctx=4096 threads=4 batch=2048/512 kv=q8_0 fa=True
+[2026-11-16 15:12:08]  INFO      supervisor            supervisor: worker 1 spawned
+[2026-11-16 15:12:08]  INFO      pool                  SharedWeightProcessPool started: workers=2 max=2 queue_max=256
+[2026-11-16 15:12:08]  INFO      api_server            Pool ready: max_workers=2 (mode=process_pool)
+[2026-11-16 15:12:08]  INFO      api_server            ✓ GPU: rocm (1)  [pool mode: parent skips torch import, workers own the GPU]
+[2026-11-16 15:12:08]  INFO      telemetry             Telemetry collection started (base interval=5.0s)
+[2026-11-16 15:12:08]  WARNING   _internal             Log handler reaper task started
+[2026-11-16 15:12:08]  INFO      api_server            Autoload order: reserved (primary) first, then residual (draft)
+[2026-11-16 15:12:08]  INFO      w1                    worker: handshake ok, entering serve loop (hb=1.00s)
+[2026-11-16 15:12:08]  INFO      api_server            Parent autoload skipped (pool mode active): pool workers own the model. Loader stays empty; /v1/models proxies pool stats.
+[2026-11-16 15:12:08]  INFO      conversation_store    Conversation store: postgresql initialized (pool size=10)
+[2026-11-16 15:12:09]  INFO      key_store             KeyStore initialized: backend=postgresql
+[2026-11-16 15:12:09]  INFO      api_server            ✓ KeyStore enabled
+[2026-11-16 15:12:09]  INFO      suspend_inhibitor     SuspendInhibitor: active (sleep:idle:handle-lid-switch:handle-suspend-key:handle-hibernate-key:handle-power-key) — host will not suspend/idle-sleep while this process runs.
+[2026-11-16 15:12:09]  INFO      api_server            ╚══ Ready  GPUs=1  CPU=4C/8T  RAM=13856MB  profile=apu_2gb  auth=keystore ══╝
+[2026-11-16 15:12:09]  INFO      api_server            ════════════════════════════════════════════════════════════════════════════════════════════════════
+[2026-11-16 15:12:09]  INFO      api_server            Runtime limits: tier=small decode_tps=3.37 prefill_tps=0.00 ctx=4096 resume_chunk=809 response=1618 idle=600s
+[2026-11-16 15:12:09]  INFO      uvicorn.error         Application startup complete.
+[2026-11-16 15:12:09]  INFO      uvicorn.error         Uvicorn running on http://127.0.0.1:8080 (Press CTRL+C to quit)
+[2026-11-16 15:12:13]  INFO      performance_analyzer  Configuration loaded from /home/deve-oops/AMB-OPT/local-llm-cloud/local-llm-server/config.yaml
+[2026-11-16 15:17:10]  INFO      api_server            loaded vocab-only tokenizer for qwen3-4b from /home/deve-oops/models/Qwen3-4B-Q4_K_M.gguf
+[2026-11-16 15:17:10]  INFO      pool                  pool: loaded vocab-only tokenizer for /home/deve-oops/models/Qwen3-4B-Q4_K_M.gguf (real prompt token counting enabled)
+[2026-11-16 15:17:10]  WARNING   w0                    chunked_prefill cache MISS: 0 entries, no shared prefix with this 396-token prompt
+[2026-11-16 15:18:59]  INFO      api_server            Ignoring unsigned/mismatched X-Session-ID header — clients must send the signed value from the Set-Cookie response. Falling back to signed cookie.
+[2026-11-16 15:18:59]  WARNING   w1                    chunked_prefill cache MISS: 0 entries, no shared prefix with this 544-token prompt
+[2026-11-16 15:20:36]  WARNING   w0                    Repetition loop (periodic) detected for 9a62f6d8 after 307 tokens — ending cleanly
+[2026-11-16 15:20:36]  INFO      api_server            POST /v1/chat/completions → 200  206785.3ms  tok=306  ttft=24124ms  dec_tps=1.67  key=cli  id=9a62f6d8
+[2026-11-16 15:20:37]  INFO      vram_manager          VRAM defragmentation is a no-op on this hardware (no CUDA / no MPS backend); skipping defrag calls silently from now on
+[2026-11-16 15:21:33]  INFO      api_server            POST /v1/chat/smart → 200  153472.5ms  tok=249  ttft=29174ms  dec_tps=2.00  key=web3  id=5779bcae
+[2026-11-16 15:21:53]  INFO      api_server            Ignoring unsigned/mismatched X-Session-ID header — clients must send the signed value from the Set-Cookie response. Falling back to signed cookie.
+[2026-11-16 15:22:56]  INFO      api_server            POST /v1/chat/smart → 200  63371.9ms  tok=101  ttft=13242ms  dec_tps=2.00  key=web3  id=4edb8f4f
+[2026-11-16 15:26:35]  INFO      api_server            Ignoring unsigned/mismatched X-Session-ID header — clients must send the signed value from the Set-Cookie response. Falling back to signed cookie.
+[2026-11-16 15:26:54]  INFO      api_server            POST /v1/chat/smart → 200  19308.4ms  tok=26  ttft=5261ms  dec_tps=1.78  key=web3  id=195c4d54
+[2026-11-16 15:27:47]  WARNING   w0                    Repetition loop (periodic) detected for 19c0a2ef after 722 tokens — ending cleanly
+[2026-11-16 15:27:47]  INFO      api_server            POST /v1/chat/completions → 200  385730.7ms  tok=721  ttft=18441ms  dec_tps=1.96  key=cli  id=19c0a2ef
+[2026-11-16 15:29:21]  INFO      performance_analyzer  Configuration loaded from /home/deve-oops/AMB-OPT/local-llm-cloud/local-llm-server/config.yaml
+[2026-11-16 15:29:28]  INFO      uvicorn.error         Shutting down
+[2026-11-16 15:29:28]  INFO      uvicorn.error         Waiting for application shutdown.
+[2026-11-16 15:29:28]  INFO      api_server            Shutting down…
+[2026-11-16 15:29:28]  INFO      system_optimizer      [DRY-RUN] would restore 0 baseline entries
+[2026-11-16 15:29:28]  WARNING   _internal             Log handler reaper task stopped
+[2026-11-16 15:29:28]  INFO      handle                worker 0 connection lost
+[2026-11-16 15:29:28]  INFO      handle                worker 1 connection lost
+[2026-11-16 15:29:28]  WARNING   w1                    Prune loop cancelled
+[2026-11-16 15:29:28]  WARNING   w0                    Prune loop cancelled
+[2026-11-16 15:29:31]  INFO      supervisor            supervisor: shutdown complete
+[2026-11-16 15:29:31]  INFO      suspend_inhibitor     SuspendInhibitor: released.
+[2026-11-16 15:29:31]  INFO      inference_engine      InferenceEngine shutdown (req=0 tok=0 err=0 oom=0)
+[2026-11-16 15:29:31]  INFO      vram_manager          Shutting down VRAMManager...
+[2026-11-16 15:29:31]  INFO      vram_manager          Background defrag thread stopped
+[2026-11-16 15:29:31]  INFO      vram_manager          VRAMManager shutdown complete
+[2026-11-16 15:29:31]  INFO      hybrid_manager        HybridMemoryManager shutdown complete (read_errors=0 write_errors=0)
+[2026-11-16 15:29:31]  INFO      ram_optimizer         RAMOptimizer: closed 0 mmap handles
+[2026-11-16 15:29:31]  INFO      ram_optimizer         RAMOptimizer shutdown complete
+[2026-11-16 15:29:31]  INFO      swap_handler          SwapHandler shutdown: 0 entries, 0.0 MB used
+[2026-11-16 15:29:31]  INFO      telemetry             Telemetry collection stopped
+[2026-11-16 15:29:31]  INFO      key_store             KeyStore database connection closed
+[2026-11-16 15:29:31]  INFO      api_server            Server stopped.
+[2026-11-16 15:29:31]  INFO      uvicorn.error         Application shutdown complete.
+[2026-11-16 15:29:31]  INFO      uvicorn.error         Finished server process [245337]
+[2026-11-16 15:29:39]  INFO      api_server            Log format: minimal → /home/deve-oops/AMB-OPT/local-llm-cloud/logs/llm_server.log
+[2026-11-16 15:29:39]  INFO      api_server            ⚡ Local LLM Cloud v1.0.0 starting
+[2026-11-16 15:29:39]  INFO      api_server            BitNet enabled: False
+[2026-11-16 15:29:39]  INFO      uvicorn.error         Started server process [254922]
+[2026-11-16 15:29:39]  INFO      uvicorn.error         Waiting for application startup.
+[2026-11-16 15:29:39]  INFO      api_server            ╔══ Local LLM Cloud v1.0.0 starting (pid=254922) ══╗
+[2026-11-16 15:29:39]  INFO      api_server            === Running startup validation ===
+[2026-11-16 15:29:39]  INFO      api_server            ✓ llama-cpp-python available
+[2026-11-16 15:29:39]  INFO      api_server            ✓ aiosqlite available
+[2026-11-16 15:29:39]  INFO      api_server            ✓ SPECTRE PYTHONPATH applied
+[2026-11-16 15:29:39]  INFO      model_unified_env     BitNetState loaded from /home/deve-oops/.config/local-llm/bitnet_state.json (available=False)
+[2026-11-16 15:29:39]  INFO      api_server            ✓ Model: loader ready  (profile='qwen3-8b'  backend=gguf)
+[2026-11-16 15:29:39]  INFO      api_server            === Startup validation passed ===
+[2026-11-16 15:29:39]  INFO      hardware_detector     Starting hardware detection ...
+[2026-11-16 15:29:40]  INFO      hardware_detector     Adaptive facts: ram_channels=1  bw_theoretical=19.2 GB/s  gtt_total=6928 bw_measured=6.7 GB/s  llama_cpp_backends=['gpu', 'cpu']  gpu_offload=True
+[2026-11-16 15:29:40]  INFO      hardware_detector     Detection done: 1 GPU(s), primary=Advanced Micro Devices, Inc. [AMD/ATI] Picasso/Raven 2 [Radeon Vega Series / Radeon Vega Mobile Series] (rev c1), recommended=rocm
+[2026-11-16 15:29:40]  INFO      api_server            GPU detection: rocm (1 GPU(s))
+[2026-11-16 15:29:41]  INFO      api_server            Memory budget: vram_target=0.95 ram_target=0.75 (source=memory.ram_utilization_target)
+[2026-11-16 15:29:41]  INFO      vram_manager          VRAMManager: 2.1 GB total, target util=95.0%, defrag threshold=30.0%, bg interval=60.0s, cuda=False, mps=False
+[2026-11-16 15:29:41]  INFO      vram_manager          Background defrag thread started (interval=60.0s)
+[2026-11-16 15:29:41]  INFO      ram_optimizer         RAMOptimizer: max=10392 MB lz4=True max_mmaps=64 max_prefetch=16
+[2026-11-16 15:29:41]  INFO      swap_handler          SwapHandler: dir=/var/lib/local-llm/swap max=32.0GB compress=True recovered=0 entries
+[2026-11-16 15:29:41]  INFO      hybrid_manager        HybridMemoryManager: vram=2048MB ram=13856MB ssd=32768MB compress=True
+[2026-11-16 15:29:41]  INFO      hardware_profiles     Bandwidth selection: 6.7 GB/s (measurement (35% of theory))
+[2026-11-16 15:29:41]  INFO      hardware_profiles     target_tps=8.00 from tier_default (no bench, no model size yet — will refine after load)
+[2026-11-16 15:29:41]  INFO      hardware_profiles     UMA APU budget (carve-out ONLY): carve_out=2048 MB gtt=6928 MB (not used) reserve=200 MB
+[2026-11-16 15:29:41]  INFO      hardware_profiles     Applying profile‑specific overrides for 'apu_2gb': {'context_length': 4096, 'n_batch': 2048, 'n_parallel': 1, 'flash_attn': True, 'context_vs_layers_priority': 'layers', 'kv_cache_quant': 'q8_0', 'speculative_decoding': False, 'use_mlock': False}
+[2026-11-16 15:29:41]  INFO      hardware_profiles     Computed profile: name=apu_2gb target_tps=8.00 [tier_default] n_batch=2048/512 ctx=4096 kv=q8_0 n_parallel=1 spec=False priority=layers mlock=False [ram_ch=1 bw_meas=6.7 bw_theo=19.2 gtt=6928 eff_vram=6381]
+[2026-11-16 15:29:41]  INFO      model_loader          ModelLoader: bench file present at construction (tps=3.37) — applied to profile (source: tier_default → bench_file)
+[2026-11-16 15:29:41]  INFO      model_loader          ModelLoader profile=apu_2gb vram_budget=1745MB
+[2026-11-16 15:29:41]  INFO      drive_pipeline        CPUThrottler: 4 physical cores → 4 threads
+[2026-11-16 15:29:41]  INFO      drive_pipeline        All BLAS thread env vars → 4
+[2026-11-16 15:29:41]  INFO      model_loader          AsyncWeightPipeline disabled (model_loader.async_weight_pipeline_enabled=false) — no madvise prefetch thread will run. The prefetch guesses layer byte ranges from file size with no feedback from llama.cpp, so on memory-bandwidth-bound hardware it competes with decode rather than helping it. See config.yaml's model_loader.async_weight_pipeline_enabled comment for how to benchmark a change.
+[2026-11-16 15:29:41]  INFO      api_server            Kernels subsystem: enabled=False
+[2026-11-16 15:29:41]  INFO      inference_engine      BitNet disabled by config — skipping BitNet loader
+[2026-11-16 15:29:41]  INFO      inference_engine      Drive pipeline active
+[2026-11-16 15:29:41]  INFO      scheduler             Scheduler initialization starting...
+[2026-11-16 15:29:41]  INFO      scheduler             Scheduler AIMD config: target_tps=3.1 batch=[1,1] interval=5.0s hysteresis=2 margins=[0.85, 0.95]
+[2026-11-16 15:29:41]  WARNING   scheduler             Scheduler queue limits: per_priority=64 total=256
+[2026-11-16 15:29:41]  INFO      scheduler             Priority weights configured: {'LOW': 1, 'NORMAL': 2, 'HIGH': 4, 'URGENT': 8} (ratio: 8.0:1)
+[2026-11-16 15:29:41]  WARNING   scheduler             Scheduler preemption persistence: disabled (in-memory only)
+[2026-11-16 15:29:41]  INFO      scheduler             Scheduler initialized: batch=1 queue=[64,256] prune_interval=10.0s preempt_persist=disabled thermal_throttle=inactive
+[2026-11-16 15:29:41]  INFO      inference_engine      UniversalKernelManager disabled (kernels.enabled=false) — GGUF path does not use PyTorch kernels
+[2026-11-16 15:29:41]  INFO      inference_engine      Faulthandler enabled → /var/lib/local-llm/crash.log
+[2026-11-16 15:29:41]  INFO      inference_engine      Native llama.cpp log → /var/lib/local-llm/llama_native.log
+[2026-11-16 15:29:41]  WARNING   inference_engine      _auto_register_bitnet_from_state: BitNet disabled — skipping
+[2026-11-16 15:29:41]  INFO      inference_engine      InferenceEngine v1.0.0 initialised (GGUF + BitNet, unified)
+[2026-11-16 15:29:41]  INFO      inference_engine      Scheduler start task enqueued
+[2026-11-16 15:29:41]  INFO      inference_engine      Slot health check started
+[2026-11-16 15:29:41]  INFO      capabilities          llama-cpp-python caps: version=0.3.36 gpu_offload=True cache=LlamaRAMCache longest_prefix=True scores_bloat=True batch_api=False | continuous_batching: n_seq_max=True kv_unified=True llama_batch=True(llama_cpp._internals.LlamaBatch) add_sequence=True ctx_decode=True seq_rm=True params_default(n_seq_max=1 kv_unified=False)
+[2026-11-16 15:29:41]  INFO      scheduler             Scheduler background tasks started
+[2026-11-16 15:29:41]  INFO      memory_ledger         MemoryLedger: ram=13856MB avail=11308MB weights=4794MB kv/worker=306MB runtime/worker=300MB bw=19.2GB/s target_min_tps=1.0 cores/worker=2 n_seq_hint=8 → max_workers=1 (mem=1 bw=4 cpu=2)
+[2026-11-16 15:29:41]  INFO      w0                    worker starting: model=qwen3-8b port=45433
+[2026-11-16 15:29:48]  WARNING   w0                    BitLinear not found in transformers 4.52.0.dev0 (backend=standard). PATH B (packed model inference) unavailable. Use bitnet.cpp CLI (recommended) or install pinned commit.
+[2026-11-16 15:29:48]  INFO      w0                    Reconstructed SystemInfo from parent — skipped detect_all()
+[2026-11-16 15:29:49]  INFO      w0                      | ggml_vulkan: Found 1 Vulkan devices:
+[2026-11-16 15:29:49]  INFO      w0                      | ggml_vulkan: 0 = AMD Radeon Vega 10 Graphics (RADV RAVEN) (radv) | uma: 1 | fp16: 1 | bf16: 0 | fp4: 0 | warp size: 64 | shared memory: 65536 | int dot: 0 | matrix cores: none
+[2026-11-16 15:29:58]  INFO      w0                    BitNet enabled=False (from config.yaml bitnet.enabled)
+[2026-11-16 15:29:58]  WARNING   w0                    Scheduler queue limits: per_priority=64 total=256
+[2026-11-16 15:29:58]  WARNING   w0                    Scheduler preemption persistence: disabled (in-memory only)
+[2026-11-16 15:29:58]  WARNING   w0                    _auto_register_bitnet_from_state: BitNet disabled — skipping
+[2026-11-16 15:29:58]  INFO      w0                    worker: model loaded load=16.9s gpu_layers=req:36/actual:? ctx=4096 threads=4 batch=2048/512 kv=q8_0 fa=True, connecting to parent
+[2026-11-16 15:29:58]  INFO      handle                worker 0 ready pid=255066 load=16.9s gpu_layers=req:36/actual:? ctx=4096 threads=4 batch=2048/512 kv=q8_0 fa=True
+[2026-11-16 15:29:58]  INFO      supervisor            supervisor: worker 0 spawned
+[2026-11-16 15:29:58]  INFO      pool                  SharedWeightProcessPool started: workers=1 max=1 queue_max=256
+[2026-11-16 15:29:58]  INFO      api_server            Pool ready: max_workers=1 (mode=process_pool)
+[2026-11-16 15:29:58]  INFO      api_server            ✓ GPU: rocm (1)  [pool mode: parent skips torch import, workers own the GPU]
+[2026-11-16 15:29:58]  INFO      telemetry             Telemetry collection started (base interval=5.0s)
+[2026-11-16 15:29:58]  WARNING   _internal             Log handler reaper task started
+[2026-11-16 15:29:58]  INFO      api_server            Autoload order: reserved (primary) first, then residual (draft)
+[2026-11-16 15:29:58]  INFO      w0                    worker: handshake ok, entering serve loop (hb=1.00s)
+[2026-11-16 15:29:58]  INFO      api_server            Parent autoload skipped (pool mode active): pool workers own the model. Loader stays empty; /v1/models proxies pool stats.
+[2026-11-16 15:29:59]  INFO      conversation_store    Conversation store: postgresql initialized (pool size=10)
+[2026-11-16 15:29:59]  INFO      key_store             KeyStore initialized: backend=postgresql
+[2026-11-16 15:29:59]  INFO      api_server            ✓ KeyStore enabled
+[2026-11-16 15:29:59]  INFO      suspend_inhibitor     SuspendInhibitor: active (sleep:idle:handle-lid-switch:handle-suspend-key:handle-hibernate-key:handle-power-key) — host will not suspend/idle-sleep while this process runs.
+[2026-11-16 15:29:59]  INFO      api_server            ╚══ Ready  GPUs=1  CPU=4C/8T  RAM=13856MB  profile=apu_2gb  auth=keystore ══╝
+[2026-11-16 15:29:59]  INFO      api_server            ════════════════════════════════════════════════════════════════════════════════════════════════════
+[2026-11-16 15:29:59]  INFO      api_server            Runtime limits: tier=small decode_tps=3.37 prefill_tps=0.00 ctx=4096 resume_chunk=809 response=1618 idle=600s
+[2026-11-16 15:29:59]  INFO      uvicorn.error         Application startup complete.
+[2026-11-16 15:29:59]  INFO      uvicorn.error         Uvicorn running on http://127.0.0.1:8080 (Press CTRL+C to quit)
+[2026-11-16 15:30:00]  INFO      performance_analyzer  Configuration loaded from /home/deve-oops/AMB-OPT/local-llm-cloud/local-llm-server/config.yaml
+[2026-11-16 15:30:45]  INFO      api_server            loaded vocab-only tokenizer for qwen3-8b from /home/deve-oops/models/Qwen3-8B-Q4_K_M.gguf
+[2026-11-16 15:30:46]  INFO      pool                  pool: loaded vocab-only tokenizer for /home/deve-oops/models/Qwen3-8B-Q4_K_M.gguf (real prompt token counting enabled)
+[2026-11-16 15:30:46]  WARNING   w0                    chunked_prefill cache MISS: 0 entries, no shared prefix with this 1456-token prompt
+[2026-11-16 15:31:30]  INFO      api_server            Ignoring unsigned/mismatched X-Session-ID header — clients must send the signed value from the Set-Cookie response. Falling back to signed cookie.
+[2026-11-16 15:36:30]  ERROR     api_server            [855e6de1] plain-text stream failed: Request queue deadline exceeded after 300s (pool is saturated)
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.14/asyncio/tasks.py", line 488, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "/usr/local/lib/python3.14/asyncio/queues.py", line 186, in get
+    await getter
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/deve-oops/AMB-OPT/local-llm-cloud/local-llm-server/local_llm_server/serving/pool/pool.py", line 912, in generate_stream
+    kind, data = await asyncio.wait_for(
+                 ^^^^^^^^^^^^^^^^^^^^^^^
+        pending.queue.get(), timeout=_remaining,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/usr/local/lib/python3.14/asyncio/tasks.py", line 487, in wait_for
+    async with timeouts.timeout(timeout):
+               ~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/usr/local/lib/python3.14/asyncio/timeouts.py", line 114, in __aexit__
+    raise TimeoutError from exc_val
+TimeoutError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/deve-oops/AMB-OPT/local-llm-cloud/local-llm-server/local_llm_server/serving/api_server.py", line 2311, in _stream_plain_text
+    async for tok in source:
+        yield tok.encode() if isinstance(tok, str) else tok
+  File "/home/deve-oops/AMB-OPT/local-llm-cloud/local-llm-server/local_llm_server/serving/api_server.py", line 678, in _monitored_stream
+    async for token in source:
+    ...<20 lines>...
+        yield token
+  File "/home/deve-oops/AMB-OPT/local-llm-cloud/local-llm-server/local_llm_server/serving/pool/pool.py", line 917, in generate_stream
+    raise PoolUnavailable(
+    ...<6 lines>...
+    )
+local_llm_server.serving.pool.pool.PoolUnavailable: Request queue deadline exceeded after 300s (pool is saturated)
+[2026-11-16 15:36:30]  INFO      api_server            POST /v1/chat/smart → 500  300015.5ms  tok=1  ttft=300015ms  dec_tps=n/a  key=web3  id=855e6de1
+[2026-11-16 15:36:31]  INFO      vram_manager          VRAM defragmentation is a no-op on this hardware (no CUDA / no MPS backend); skipping defrag calls silently from now on
+[2026-11-16 15:38:01]  WARNING   w0                    Repetition loop (periodic) detected for e82a7b9a after 498 tokens — ending cleanly
+[2026-11-16 15:38:01]  INFO      pool                  pool: dropped 1 expired request(s) from FIFO
+[2026-11-16 15:38:01]  INFO      api_server            POST /v1/chat/completions → 200  435955.0ms  tok=497  ttft=97765ms  dec_tps=1.47  key=cli  id=e82a7b9a
+[2026-11-16 15:39:20]  INFO      api_server            Ignoring unsigned/mismatched X-Session-ID header — clients must send the signed value from the Set-Cookie response. Falling back to signed cookie.
+[2026-11-16 15:41:28]  INFO      api_server            POST /v1/chat/smart → 200  127944.4ms  tok=80  ttft=77844ms  dec_tps=1.58  key=web3  id=a364d369
+[2026-11-16 15:41:52]  INFO      uvicorn.error         Shutting down
+[2026-11-16 15:41:52]  INFO      uvicorn.error         Waiting for application shutdown.
+[2026-11-16 15:41:52]  INFO      api_server            Shutting down…
+[2026-11-16 15:41:52]  INFO      system_optimizer      [DRY-RUN] would restore 0 baseline entries
+[2026-11-16 15:41:52]  WARNING   _internal             Log handler reaper task stopped
+[2026-11-16 15:41:52]  INFO      handle                worker 0 connection lost
+[2026-11-16 15:41:52]  WARNING   w0                    Prune loop cancelled
+[2026-11-16 15:41:54]  INFO      supervisor            supervisor: shutdown complete
+[2026-11-16 15:41:54]  INFO      suspend_inhibitor     SuspendInhibitor: released.
+[2026-11-16 15:41:54]  INFO      inference_engine      InferenceEngine shutdown (req=0 tok=0 err=0 oom=0)
+[2026-11-16 15:41:54]  INFO      vram_manager          Shutting down VRAMManager...
+[2026-11-16 15:41:54]  INFO      vram_manager          Background defrag thread stopped
+[2026-11-16 15:41:54]  INFO      vram_manager          VRAMManager shutdown complete
+[2026-11-16 15:41:54]  INFO      hybrid_manager        HybridMemoryManager shutdown complete (read_errors=0 write_errors=0)
+[2026-11-16 15:41:54]  INFO      ram_optimizer         RAMOptimizer: closed 0 mmap handles
+[2026-11-16 15:41:54]  INFO      ram_optimizer         RAMOptimizer shutdown complete
+[2026-11-16 15:41:54]  INFO      swap_handler          SwapHandler shutdown: 0 entries, 0.0 MB used
+[2026-11-16 15:41:54]  INFO      telemetry             Telemetry collection stopped
+[2026-11-16 15:41:54]  INFO      key_store             KeyStore database connection closed
+[2026-11-16 15:41:54]  INFO      api_server            Server stopped.
+[2026-11-16 15:41:54]  INFO      uvicorn.error         Application shutdown complete.
+[2026-11-16 15:41:54]  INFO      uvicorn.error         Finished server process [254922]
