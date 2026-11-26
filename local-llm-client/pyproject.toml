@@ -1,0 +1,135 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# local-llm-client/pyproject.toml — Production standard (PEP 621 + PEP 639)
+# ═══════════════════════════════════════════════════════════════════════════════
+# Authoritative source of metadata. `setup.py` is intentionally ABSENT —
+# this package builds entirely from pyproject.toml via setuptools>=77.
+#
+# ALL runtime dependencies live in [project.dependencies]. There are no
+# extras. One `pip install -e .` (or `pip install .`) yields a fully
+# working SDK + CLI: sync client, async client (aiohttp), C accelerator
+# (cffi), interactive chat (prompt_toolkit + rich), JSON syntax
+# highlighting (pygments), config parsing (yaml), and system info.
+#
+# The package is standalone — it does NOT depend on local-llm-core or
+# local-llm-server. It is a pure HTTP client + CLI tool. It can be
+# installed and used against any remote Local LLM Cloud server.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+[build-system]
+requires      = ["setuptools>=77.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+
+# ─── Project metadata ─────────────────────────────────────────────────────────
+[project]
+name            = "local-llm-client"
+version         = "1.0.0"
+description     = "Standalone SDK and CLI client for Local LLM Cloud inference"
+readme          = { file = "README.md", content-type = "text/markdown" }
+requires-python = ">=3.10,<4.0"
+
+# SPDX license expression (PEP 639). `LicenseRef-Proprietary` is the
+# correct SPDX form for a custom closed-source license — required by
+# setuptools>=77. Replaces the deprecated `{ text = "..." }` form.
+license         = "LicenseRef-Proprietary"
+
+authors         = [{ name = "Deveeelloopase", email = "dev@example.com" }]
+
+keywords = [
+    "llm", "client", "sdk", "cli", "ai", "inference",
+    "local", "private", "chatbot", "self-hosted",
+]
+
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Utilities",
+    "Typing :: Typed",
+]
+
+
+# ─── Runtime dependencies — ALL of them, no extras ────────────────────────────
+dependencies = [
+    # ─── HTTP clients ────────────────────────────────────────────────────
+    # The client ships multiple HTTP paths, each used on a different
+    # code path. All are installed so every code path works out of the box:
+    #   • urllib3   — sync client (LLMCloudClient)
+    #   • aiohttp   — async client (AsyncLLMCloudClient, preferred)
+    #   • httpx     — optional modern client for SDK consumers
+    #   • cffi      — C accelerator path in _accel (falls back to ctypes)
+    "urllib3",
+    "aiohttp",
+    "httpx",
+    "cffi",
+
+    # ─── CLI & terminal UI ──────────────────────────────────────────────
+    "click",
+    "rich",
+    "prompt_toolkit",     # interactive chat input (fallback: builtin input)
+    "pygments",           # JSON syntax highlighting in `chat --json`
+
+    # ─── Configuration & validation ─────────────────────────────────────
+    "pyyaml",
+    "pydantic",
+
+    # ─── System info ────────────────────────────────────────────────────
+    "psutil",
+]
+
+# NOTE: `anyio` was previously listed but is not imported anywhere in
+# local_llm_client/ — httpx brings its own async-compat layer transitively.
+# Removed per requirements.txt audit. If any future direct import of anyio
+# appears, re-add it here.
+
+
+# ─── Console scripts ─────────────────────────────────────────────────────────
+[project.scripts]
+llm         = "local_llm_client.cli.main:cli"
+local-llm   = "local_llm_client.cli.main:cli"
+llm-install = "local_llm_client.cli.install_cmd:main"
+
+
+# ─── URLs ─────────────────────────────────────────────────────────────────────
+# Note: repo URL standardised to `Local-LLM` (matches local-llm-core and
+# local-llm-server). The previous `LLM-Local` was inconsistent with the
+# sibling packages and would 404 if the GitHub repo is named Local-LLM.
+[project.urls]
+Homepage      = "https://github.com/Deveeelloopase/Local-LLM"
+Source        = "https://github.com/Deveeelloopase/Local-LLM"
+Issues        = "https://github.com/Deveeelloopase/Local-LLM/issues"
+Documentation = "https://github.com/Deveeelloopase/Local-LLM/blob/master/local-llm-client/README.md"
+Changelog     = "https://github.com/Deveeelloopase/Local-LLM/releases"
+
+
+# ─── Setuptools configuration ────────────────────────────────────────────────
+[tool.setuptools]
+include-package-data = true
+zip-safe             = false
+
+[tool.setuptools.packages.find]
+where   = ["."]
+include = ["local_llm_client", "local_llm_client.*"]
+exclude = ["tests", "tests.*", "examples", "examples.*", "scripts", "docs"]
+
+[tool.setuptools.package-data]
+local_llm_client       = ["config.yaml", "py.typed"]
+"local_llm_client.web" = ["*.html", "*.css", "*.js"]
+
+# -----------------------------------------------------------------------------
+# Dynamic fields (version read from package)
+# -----------------------------------------------------------------------------
+[tool.setuptools.dynamic]
+# Reads __version__ from local_llm_client/__init__.py via AST parsing
+# (no module import → no side effects, no missing-dependency errors).
+version = { attr = "local_llm_client.__version__" }

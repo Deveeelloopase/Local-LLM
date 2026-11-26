@@ -1,0 +1,173 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# pyproject.toml — local-llm-server v1.0.0
+# ═══════════════════════════════════════════════════════════════════════════════
+# Build backend: hatchling (>=1.22 required for PEP 639 license-string support).
+#
+# Why hatchling instead of setuptools?
+#   Modern pip (>=21.3) uses PEP 517/660 for ALL installs — including
+#   `pip install -e .`. This bypasses setup.py cmdclass hooks
+#   (PostInstallCommand / PostDevelopCommand), so install.sh never ran via
+#   setup.py. Hatchling exposes a first-class build hook API that fires on
+#   every install (including editable), which is what we need to surface
+#   the post-install "run sudo llm-server-install" message.
+#
+# All runtime deps are in [project.dependencies] — no extras, no
+# "pip install .[all]". One `pip install -e .` yields a fully working
+# server: FastAPI, uvicorn, Postgres, MySQL, SQLite, Rich TUI, tools,
+# compression, structured logging — everything the package imports at
+# runtime.
+#
+# INSTALL ORDER (monorepo):
+#   pip install -e ../local-llm-core    ← must be first
+#   pip install -e ../local-llm-server  ← then this
+# install.sh already does this in the correct order. A bare
+# `pip install -e local-llm-server` BEFORE core is installed would attempt
+# a PyPI lookup for local-llm-core and fail — that's expected; use
+# install.sh, which sequences correctly.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+[build-system]
+requires      = ["hatchling>=1.22"]
+build-backend = "hatchling.build"
+
+
+# ─── Project metadata ─────────────────────────────────────────────────────────
+[project]
+name            = "local-llm-server"
+version         = "1.0.0"
+description     = "OpenAI-compatible REST API server for Local LLM Cloud"
+readme          = { file = "README.md", content-type = "text/markdown" }
+license         = "LicenseRef-Proprietary"
+authors         = [{ name = "Deveeelloopase", email = "dev@example.com" }]
+requires-python = ">=3.10,<4.0"
+
+keywords = [
+    "llm", "inference", "openai", "api", "server", "local",
+    "self-hosted", "self-hosted-ai", "fastapi",
+]
+
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS :: MacOS X",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
+    "Typing :: Typed",
+]
+
+
+# ─── Runtime dependencies — ALL of them, no extras ────────────────────────────
+dependencies = [
+    # ─── Monorepo sibling — must be installed first ─────────────────────
+    # install.sh handles ordering (`pip install -e local-llm-core` first).
+    "local-llm-core>=1.0.0",
+
+    # ─── Web framework & ASGI ────────────────────────────────────────────
+    "fastapi",
+    "starlette",
+    "uvicorn[standard]",
+    "python-multipart",
+    "websockets",
+
+    # ─── Data validation & configuration ─────────────────────────────────
+    "pydantic",
+    "pyyaml",
+
+    # ─── HTTP client (talks to local-llm-core when run as separate service)
+    "httpx",
+
+    # ─── System & monitoring ─────────────────────────────────────────────
+    "psutil",
+    "prometheus-client",
+
+    # ─── Terminal UI (llm-monitor + llm-tune + llm-doctor) ───────────────
+    "rich",
+    "click",
+    "wcwidth",
+
+    # ─── Persistence — SQLite (zero-config default) ──────────────────────
+    "aiosqlite",
+
+    # ─── Persistence — PostgreSQL (production backend used here) ─────────
+    "asyncpg",
+
+    # ─── Persistence — MySQL (supported) ─────────────────────────────────
+    "aiomysql",
+
+    # ─── Compression ─────────────────────────────────────────────────────
+    "lz4",
+
+    # ─── Structured logging ──────────────────────────────────────────────
+    "structlog",
+
+    # ─── Security ────────────────────────────────────────────────────────
+    "defusedxml>=0.7.1",
+]
+
+
+# ─── URLs ─────────────────────────────────────────────────────────────────────
+[project.urls]
+Homepage  = "https://github.com/Deveeelloopase/Local-LLM"
+Source    = "https://github.com/Deveeelloopase/Local-LLM"
+Issues    = "https://github.com/Deveeelloopase/Local-LLM/issues"
+Changelog = "https://github.com/Deveeelloopase/Local-LLM/releases"
+
+
+# ─── Console scripts ─────────────────────────────────────────────────────────
+[project.scripts]
+local-llm-server   = "local_llm_server.__main__:main"
+llm-server         = "local_llm_server.__main__:main"
+llm-monitor        = "local_llm_server.monitoring.__main__:main"
+llm-server-install = "local_llm_server.cli.server_install_cmd:main"
+llm-tune           = "local_llm_server.tools.tune:main"
+llm-bench          = "local_llm_server.tools.tune:bench_main"
+llm-doctor         = "local_llm_server.tools.doctor:main"
+llm-autoconfig     = "local_llm_server.tools.autoconfig:main"
+llm-calibrate      = "local_llm_server.tools.bench_decode:main"
+llm-bench-ab       = "local_llm_server.tools.bench_ab:main"
+
+
+# ─── Hatchling — packaging config ────────────────────────────────────────────
+[tool.hatch.build.targets.wheel]
+packages = ["local_llm_server"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "local_llm_server/",
+    # hatch_build.py is REQUIRED in the sdist: pip unpacks the sdist and
+    # then evaluates [tool.hatch.build.hooks.custom] path = "hatch_build.py".
+    # If the file is missing, sdist installs fail with "cannot find custom
+    # build hook". This line was missing in the previous pyproject.toml.
+    "hatch_build.py",
+    "install.sh",
+    "config.yaml",
+    "config.example.yaml",
+    "local-llm-cloud.service",
+    "local-llm-cloud.service.template",
+    "requirements.txt",
+    "README.md",
+    "DEPLOYMENT.md",
+]
+
+
+# ─── Build hook: prints post-install next-step message ───────────────────────
+# Runs on every pip install (including editable). Prints the
+# "run sudo llm-server-install" instruction after pip resolves deps.
+# Idempotent and side-effect-free (see hatch_build.py).
+# Skip via SKIP_POST_INSTALL=1 or LLM_SETUP_RUNNING=1.
+[tool.hatch.build.hooks.custom]
+path = "hatch_build.py"
+
+
+# ─── Pytest (inert unless pytest is installed manually) ──────────────────────
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths    = ["tests"]

@@ -1,0 +1,780 @@
+Starting...
+[2026-11-25 13:01:35]  INFO      api_server            Log format: minimal → /home/deve-oops/AMB-OPT/local-llm-cloud/logs/llm_server.log
+[2026-11-25 13:01:35]  INFO      api_server            ⚡ Local LLM Cloud v1.0.0 starting
+[2026-11-25 13:01:35]  INFO      api_server            BitNet enabled: False
+[2026-11-25 13:01:35]  INFO      uvicorn.error         Started server process [635242]
+[2026-11-25 13:01:35]  INFO      uvicorn.error         Waiting for application startup.
+[2026-11-25 13:01:35]  INFO      api_server            ╔══ Local LLM Cloud v1.0.0 starting (pid=635242) ══╗
+[2026-11-25 13:01:35]  INFO      api_server            === Running startup validation ===
+[2026-11-25 13:01:35]  INFO      api_server            ✓ llama-cpp-python available
+[2026-11-25 13:01:35]  INFO      api_server            ✓ aiosqlite available
+[2026-11-25 13:01:35]  INFO      api_server            ✓ SPECTRE PYTHONPATH applied
+[2026-11-25 13:01:35]  INFO      model_unified_env     BitNetState loaded from /home/deve-oops/.config/local-llm/bitnet_state.json (available=False)
+[2026-11-25 13:01:35]  INFO      api_server            ✓ Model: loader ready  (profile='granite-4.2-8b'  backend=gguf)
+[2026-11-25 13:01:35]  INFO      api_server            === Startup validation passed ===
+[2026-11-25 13:01:35]  INFO      hardware_detector     Starting hardware detection ...
+[2026-11-25 13:01:35]  INFO      hardware_detector     Adaptive facts: ram_channels=1  bw_theoretical=19.2 GB/s  gtt_total=6928 bw_measured=12.2 GB/s  llama_cpp_backends=['gpu', 'cpu']  gpu_offload=True
+[2026-11-25 13:01:35]  INFO      hardware_detector     Detection done: 1 GPU(s), primary=Advanced Micro Devices, Inc. [AMD/ATI] Picasso/Raven 2 [Radeon Vega Series / Radeon Vega Mobile Series] (rev c1), recommended=rocm
+[2026-11-25 13:01:35]  INFO      api_server            GPU detection: rocm (1 GPU(s))
+[2026-11-25 13:01:36]  INFO      hardware_profiles     Bandwidth selection: 12.2 GB/s (measurement (64% of theory))
+[2026-11-25 13:01:36]  INFO      hardware_profiles     target_tps=8.00 from tier_default (no bench, no model size yet — will refine after load)
+[2026-11-25 13:01:36]  INFO      hardware_profiles     UMA APU budget (carve-out ONLY): carve_out=2048 MB gtt=6928 MB (not used) reserve=200 MB
+[2026-11-25 13:01:36]  INFO      hardware_profiles     Applying profile‑specific overrides for 'apu_2gb': {'context_length': 4096, 'n_batch': 2048, 'n_parallel': 1, 'flash_attn': True, 'context_vs_layers_priority': 'layers', 'kv_cache_quant': 'f16', 'speculative_decoding': False, 'use_mlock': False}
+[2026-11-25 13:01:36]  INFO      hardware_profiles     Computed profile: name=apu_2gb target_tps=8.00 [tier_default] n_batch=2048/512 ctx=4096 kv=f16 n_parallel=1 spec=False priority=layers mlock=False [ram_ch=1 bw_meas=12.2 bw_theo=19.2 gtt=6928 eff_vram=6381]
+[2026-11-25 13:01:36]  INFO      api_server            autoconfig: machine: AMD Ryzen 7 3700U with Radeon Vega Mobile Gfx · 4c/8t · RAM 13856 MB (1-ch, 12.5 GB/s) · hip (Advanced Micro Devices, Inc. [AMD/ATI] Picasso/Raven 2 [Radeon Vega Series / Radeon Vega Mobile Series] (rev c1), unified)
+[2026-11-25 13:01:36]  INFO      api_server            autoconfig: budgets: RAM 10392 MB · device 6235 MB · resident: granite-4.2-8b
+[2026-11-25 13:01:36]  INFO      api_server            autoconfig:   granite-4.2-8b           ok        AUTOLOAD  ngl=40  ctx=4096   kv=f16   ram=6178 MB dev=5940 MB speed=2.81 tok/s (bench)
+[2026-11-25 13:01:36]  INFO      api_server            autoconfig:   qwen3-8b                 ok        on demand ngl=36  ctx=4096   kv=f16   ram=5626 MB dev=5266 MB speed=2.11 tok/s (roofline)
+[2026-11-25 13:01:36]  INFO      api_server            autoconfig:   qwen3-4b                 ok        on demand ngl=36  ctx=4096   kv=f16   ram=3213 MB dev=2988 MB speed=4.25 tok/s (roofline)
+[2026-11-25 13:01:36]  INFO      api_server            autoconfig:   qwen3-0.6b               ok        on demand ngl=28  ctx=4096   kv=f16   ram=1313 MB dev=1191 MB speed=16.59 tok/s (roofline)
+[2026-11-25 13:01:36]  INFO      api_server            autoconfig:   ggml-model               ok        on demand ngl=0   ctx=4096   kv=f16   ram=1560 MB dev=0 MB speed=8.93 tok/s (roofline)
+[2026-11-25 13:01:36]  INFO      api_server            autoconfig:   calibration granite-4.2-8b: cached
+[2026-11-25 13:01:36]  INFO      api_server            autoconfig:   warning: ggml-model: single-channel RAM: CPU-resident layers decode slowly
+[2026-11-25 13:01:36]  INFO      api_server            autoconfig: computed profiles written to /var/lib/local-llm/model_profiles.json
+[2026-11-25 13:01:36]  INFO      api_server            Memory budget: vram_target=0.95 ram_target=0.75 (source=memory.ram_utilization_target)
+[2026-11-25 13:01:36]  INFO      vram_manager          VRAMManager: 2.1 GB total, target util=95.0%, defrag threshold=30.0%, bg interval=60.0s, cuda=False, mps=False
+[2026-11-25 13:01:36]  INFO      vram_manager          Background defrag thread started (interval=60.0s)
+[2026-11-25 13:01:36]  INFO      ram_optimizer         RAMOptimizer: max=10392 MB lz4=True max_mmaps=64 max_prefetch=16
+[2026-11-25 13:01:36]  INFO      swap_handler          SwapHandler: dir=/var/lib/local-llm/swap max=32.0GB compress=True recovered=0 entries
+[2026-11-25 13:01:36]  INFO      hybrid_manager        HybridMemoryManager: vram=2048MB ram=13856MB ssd=32768MB compress=True
+[2026-11-25 13:01:36]  INFO      seq_planner           continuous_batching.n_seq_max=auto → 4  (n_ctx=4096 weights=5283MB avail=11707MB cores=4)
+[2026-11-25 13:01:36]  INFO      hardware_profiles     Bandwidth selection: 12.2 GB/s (measurement (64% of theory))
+[2026-11-25 13:01:36]  INFO      hardware_profiles     target_tps=8.00 from tier_default (no bench, no model size yet — will refine after load)
+[2026-11-25 13:01:36]  INFO      hardware_profiles     UMA APU budget (carve-out ONLY): carve_out=2048 MB gtt=6928 MB (not used) reserve=200 MB
+[2026-11-25 13:01:36]  INFO      hardware_profiles     Applying profile‑specific overrides for 'apu_2gb': {'context_length': 4096, 'n_batch': 2048, 'n_parallel': 1, 'flash_attn': True, 'context_vs_layers_priority': 'layers', 'kv_cache_quant': 'f16', 'speculative_decoding': False, 'use_mlock': False}
+[2026-11-25 13:01:36]  INFO      hardware_profiles     Computed profile: name=apu_2gb target_tps=8.00 [tier_default] n_batch=2048/512 ctx=4096 kv=f16 n_parallel=1 spec=False priority=layers mlock=False [ram_ch=1 bw_meas=12.2 bw_theo=19.2 gtt=6928 eff_vram=6381]
+[2026-11-25 13:01:36]  INFO      model_loader          ModelLoader: bench file present at construction (tps=2.81) — applied to profile (source: tier_default → bench_file)
+[2026-11-25 13:01:36]  INFO      model_loader          ModelLoader profile=apu_2gb vram_budget=1745MB
+[2026-11-25 13:01:36]  INFO      drive_pipeline        CPUThrottler: 4 physical cores → 4 threads
+[2026-11-25 13:01:36]  INFO      drive_pipeline        All BLAS thread env vars → 4
+[2026-11-25 13:01:36]  INFO      model_loader          AsyncWeightPipeline disabled (model_loader.async_weight_pipeline_enabled=false) — no madvise prefetch thread will run. The prefetch guesses layer byte ranges from file size with no feedback from llama.cpp, so on memory-bandwidth-bound hardware it competes with decode rather than helping it. See config.yaml's model_loader.async_weight_pipeline_enabled comment for how to benchmark a change.
+[2026-11-25 13:01:37]  INFO      api_server            Kernels subsystem: enabled=False
+[2026-11-25 13:01:37]  INFO      inference_engine      BitNet disabled by config — skipping BitNet loader
+[2026-11-25 13:01:37]  INFO      inference_engine      Drive pipeline active
+[2026-11-25 13:01:37]  INFO      scheduler             Scheduler initialization starting...
+[2026-11-25 13:01:37]  INFO      scheduler             Scheduler AIMD config: target_tps=3.1 batch=[1,1] interval=5.0s hysteresis=2 margins=[0.85, 0.95]
+[2026-11-25 13:01:37]  WARNING   scheduler             Scheduler queue limits: per_priority=64 total=256
+[2026-11-25 13:01:37]  INFO      scheduler             Priority weights configured: {'LOW': 1, 'NORMAL': 2, 'HIGH': 4, 'URGENT': 8} (ratio: 8.0:1)
+[2026-11-25 13:01:37]  WARNING   scheduler             Scheduler preemption persistence: disabled (in-memory only)
+[2026-11-25 13:01:37]  INFO      scheduler             Scheduler initialized: batch=1 queue=[64,256] prune_interval=10.0s preempt_persist=disabled thermal_throttle=inactive
+[2026-11-25 13:01:37]  INFO      inference_engine      UniversalKernelManager disabled (kernels.enabled=false) — GGUF path does not use PyTorch kernels
+[2026-11-25 13:01:37]  INFO      inference_engine      Faulthandler enabled → /var/lib/local-llm/crash.log
+[2026-11-25 13:01:37]  INFO      inference_engine      Native llama.cpp log → /var/lib/local-llm/llama_native.log
+[2026-11-25 13:01:37]  WARNING   inference_engine      _auto_register_bitnet_from_state: BitNet disabled — skipping
+[2026-11-25 13:01:37]  INFO      inference_engine      InferenceEngine v1.0.0 initialised (GGUF + BitNet, unified)
+[2026-11-25 13:01:37]  INFO      inference_engine      Continuous batching enabled in config: n_seq_max=4 kv_unified=True (batched engine will initialize on first generate_stream call once a model is loaded)
+[2026-11-25 13:01:37]  INFO      inference_engine      Scheduler start task enqueued
+[2026-11-25 13:01:37]  INFO      inference_engine      Slot health check started
+[2026-11-25 13:01:37]  INFO      api_server            ✓ GPU: rocm (1)
+[2026-11-25 13:01:37]  INFO      scheduler             Scheduler background tasks started
+[2026-11-25 13:01:37]  INFO      telemetry             Telemetry collection started (base interval=5.0s)
+[2026-11-25 13:01:37]  WARNING   _internal             Log handler reaper task started
+[2026-11-25 13:01:37]  INFO      api_server            Autoload order: reserved (primary) first, then residual (draft)
+[2026-11-25 13:01:37]  INFO      model_loader          Load [f64317e3]: model_id='granite-4.2-8b' path='/home/deve-oops/models/granite-4.2-8b-Q4_K_M.gguf'
+[2026-11-25 13:01:37]  INFO      model_loader          ModelLoader: 'granite-4.2-8b' target_tps=2.81 [bench_file] KV=f16
+[2026-11-25 13:01:37]  INFO      model_loader          Pre‑flight: model='granite-4.2-8b' size=5282.7MB required=5922MB usable=45900MB est TPS=2.53 status=comfortable
+[2026-11-25 13:01:37]  INFO      model_loader          Load [f64317e3]: initiating load
+[2026-11-25 13:01:37]  INFO      model_loader          Skipping NVMe sysctls (system.allow_kernel_tuning=false) — dirty_* / vfs_cache_pressure left at host defaults
+[2026-11-25 13:01:37]  INFO      model_loader          Context sizing for 'granite-4.2-8b': n_ctx_train=131072, profile_floor=4096, kv_bytes/token=override, computed=4096, chosen=4096 (mc.context_length=4096)
+[2026-11-25 13:01:37]  INFO      drive_pipeline        NVMe advisor: model=5282MB  ram_free=8243MB
+[2026-11-25 13:01:37]  INFO      drive_pipeline        NVMe: SEQUENTIAL only (model=5282MB > 40% of free RAM=8243MB — WILLNEED would duplicate weights the GPU may already hold)
+[2026-11-25 13:01:37]  INFO      layer_streamer        Backend: llama_cpp
+[2026-11-25 13:01:37]  INFO      layer_streamer        AdaptiveLoader: cpus=logical:8 physical:4 threads=4 batch_threads=4 parallel=1
+[2026-11-25 13:01:37]  INFO      layer_streamer        Continuous batching requested: n_seq_max=4 kv_unified=True n_outputs_max=4 (applied via Llama(**kwargs) → context_params C struct)
+[2026-11-25 13:01:37]  INFO      layer_streamer        Load attempt 1/5: n_ctx=4096 n_batch=2048 n_ubatch=512 gpu=41 parallel=1
+[2026-11-25 13:01:37]  INFO      capabilities          llama-cpp-python caps: version=0.3.36 gpu_offload=True cache=LlamaRAMCache longest_prefix=True scores_bloat=True batch_api=False | continuous_batching: n_seq_max=True kv_unified=True llama_batch=True(llama_cpp._internals.LlamaBatch) add_sequence=True ctx_decode=True seq_rm=True params_default(n_seq_max=1 kv_unified=False)
+[2026-11-25 13:01:37]  INFO      inference_engine      LeanLlama active: stripping scores from save_state (llama-cpp-python 0.3.36, saves n_tokens×vocab×4 B per cached prefix)
+[2026-11-25 13:01:37]  INFO      conversation_store    Conversation store: postgresql initialized (pool size=10)
+[2026-11-25 13:01:37]  INFO      key_store             KeyStore initialized: backend=postgresql
+[2026-11-25 13:01:37]  INFO      api_server            ✓ KeyStore enabled
+[2026-11-25 13:01:37]  INFO      suspend_inhibitor     SuspendInhibitor: active (sleep:idle:handle-lid-switch:handle-suspend-key:handle-hibernate-key:handle-power-key) — host will not suspend/idle-sleep while this process runs.
+[2026-11-25 13:01:37]  INFO      api_server            ╚══ Ready  GPUs=1  CPU=4C/8T  RAM=13856MB  profile=apu_2gb  auth=keystore ══╝
+[2026-11-25 13:01:37]  INFO      api_server            ════════════════════════════════════════════════════════════════════════════════════════════════════
+[2026-11-25 13:01:37]  INFO      uvicorn.error         Application startup complete.
+[2026-11-25 13:01:37]  INFO      uvicorn.error         Uvicorn running on http://127.0.0.1:8080 (Press CTRL+C to quit)
+[2026-11-25 13:01:40]  INFO      performance_analyzer  Configuration loaded from /home/deve-oops/AMB-OPT/local-llm-cloud/local-llm-server/config.yaml
+[2026-11-25 13:01:45]  INFO      layer_streamer        ✓ Load successful in 7.97s | model=granite-4.2-8b-Q4_K_M.gguf gpu=req=41 actual=? | ctx=req=4096 actual=4096 | batch=2048/512 parallel=1
+[2026-11-25 13:01:45]  INFO      layer_streamer        n_seq_max=4 will be applied by BatchedInferenceEngine context rebuild on first request (kwargs passthrough does not modify context_params on this llama-cpp-python build): n_seq_max mismatch: requested 4, context has 1 — Llama(**kwargs) did not apply it
+[2026-11-25 13:01:45]  INFO      layer_streamer        prefix cache sized from KV math: 163840 B/token, want=1344 MB, cap=2679 MB -> 1344 MB
+[2026-11-25 13:01:45]  INFO      layer_streamer        LlamaRAMCache attached (capacity=1344 MB) — longest-prefix lookup active
+[2026-11-25 13:01:45]  INFO      model_loader          VRAM tracker: skipping bookkeeping for 'granite-4.2-8b' (est 5282 MB, carve-out budget 1745 MB, GTT total 6928 MB). Model is running from GTT-addressable RAM, not the carve-out — see /v1/metrics for the driver-reported allocation.
+[2026-11-25 13:01:45]  INFO      model_loader          Loaded 'granite-4.2-8b' 8.1s | backend=llama_cpp | gpu=40/40 | strategy=manual | vram=5282MB
+[2026-11-25 13:01:45]  INFO      model_loader          Model 'granite-4.2-8b' loaded in 8.21s | gpu=40/40
+[2026-11-25 13:01:45]  INFO      api_server            ✓ Autoloaded: granite-4.2-8b (6178 MB)
+[2026-11-25 13:01:45]  INFO      inference_engine      Batched engine device budget: 8673 MB (carve-out/VRAM 1745 + GTT 6928)
+[2026-11-25 13:01:45]  INFO      batched_engine        BatchedInferenceEngine: n_seq_max=4 (ctx=4, pf_reserved=0) n_ctx=4096 n_batch=2048 n_vocab=100352 eos=100257 prefill_chunk=511
+[2026-11-25 13:01:45]  WARNING   inference_engine      Batched engine unavailable — falling back to single-sequence. Reason: _rebuild_context refused: peak≈8099 MB (weights 5282 + new_ctx 2305 [kv 2048 + compute 256 + output 1] + margin 512) exceeds available RAM 7657 MB. ggml_abort would occur otherwise. Options: lower num_gpu_layers, lower n_seq_max, disable PF cache, or add RAM.
+[2026-11-25 13:01:45]  INFO      inference_engine      Slot 0 acquired for request warmup-g
+[2026-11-25 13:01:45]  INFO      inference_engine      Slot 0 assigned to stream request warmup-g
+[2026-11-25 13:01:45]  INFO      inference_engine      Dispatching stream request warmup-g to backend
+[2026-11-25 13:01:45]  INFO      inference_engine      Request warmup-g carries an explicit 600s total deadline; it will be enforced by the caller, not by AsyncTokenBuffer.
+[2026-11-25 13:01:45]  INFO      inference_engine      Prefill budget for warmup-g: 120.0s (est_prompt_tokens=1, ewma_prefill_tps=4.00)
+[2026-11-25 13:01:45]  INFO      chunked_prefill       chunked_prefill entry: total=1 min_tokens=256 chunk=256 cache_present=True cache_entries=0
+[2026-11-25 13:01:45]  INFO      chunked_prefill       chunked_prefill skip: prompt 1 tok < min_tokens 256 — leaving evaluation to the caller's generate() path
+[2026-11-25 13:01:45]  INFO      inference_engine      Prefill warmup-g: total=1 reused=0 evaluated=0 cache_hit=False in 0.0s
+[2026-11-25 13:01:45]  INFO      api_server            ✓ Warmed up: granite-4.2-8b
+[2026-11-25 13:01:45]  INFO      inference_engine      Slot 0 released for request warmup-g
+[2026-11-25 13:01:45]  INFO      api_server            Runtime limits: tier=minimal decode_tps=1.92 prefill_tps=0.00 ctx=4096 resume_chunk=460 response=921 idle=900s
+[2026-11-25 13:01:46]  INFO      inference_engine      Producer thread exited 0.5s after cancel.
+[2026-11-25 13:10:52]  WARNING   telemetry             ANOMALY [critical]: gpu_0_temp=64.00 (z=8.4, mean=57.24)
+[2026-11-25 13:12:12]  WARNING   telemetry             ANOMALY [warning]: gpu_0_temp=63.00 (z=4.4, mean=57.29)
+[2026-11-25 13:12:26]  INFO      chat_template         chat_template: granite-4.2-8b uses its embedded template (dialect=qwen3, think-switch=True)
+[2026-11-25 13:12:26]  INFO      inference_engine      Slot 0 acquired for request 73763fcb
+[2026-11-25 13:12:26]  INFO      inference_engine      Slot 0 assigned to stream request 73763fcb
+[2026-11-25 13:12:26]  INFO      inference_engine      Dispatching stream request 73763fcb to backend
+[2026-11-25 13:12:26]  INFO      inference_engine      Request 73763fcb carries an explicit 3600s total deadline; it will be enforced by the caller, not by AsyncTokenBuffer.
+[2026-11-25 13:12:26]  INFO      inference_engine      Prefill budget for 73763fcb: 120.0s (est_prompt_tokens=74, ewma_prefill_tps=4.00)
+[2026-11-25 13:12:26]  INFO      chunked_prefill       chunked_prefill entry: total=74 min_tokens=256 chunk=256 cache_present=True cache_entries=0
+[2026-11-25 13:12:26]  INFO      chunked_prefill       chunked_prefill skip: prompt 74 tok < min_tokens 256 — leaving evaluation to the caller's generate() path
+[2026-11-25 13:12:26]  INFO      inference_engine      Prefill 73763fcb: total=74 reused=0 evaluated=0 cache_hit=False in 0.0s
+[2026-11-25 13:13:12]  WARNING   telemetry             ANOMALY [warning]: gpu_0_temp=79.00 (z=3.8, mean=58.96)
+[2026-11-25 13:16:36]  INFO      inference_engine      Request 73763fcb carries an explicit 3600s total deadline; it will be enforced by the caller, not by AsyncTokenBuffer.
+[2026-11-25 13:16:36]  INFO      inference_engine      Prefill budget for 73763fcb: 120.0s (est_prompt_tokens=586, ewma_prefill_tps=4.00)
+[2026-11-25 13:16:36]  INFO      chunked_prefill       chunked_prefill entry: total=586 min_tokens=256 chunk=256 cache_present=True cache_entries=1
+[2026-11-25 13:16:36]  INFO      chunked_prefill       chunked_prefill cache HIT via LlamaRAMCache: reused=585/586 tokens (stored seq had 585)
+[2026-11-25 13:16:36]  INFO      chunked_prefill       chunked_prefill done: total=586 reused=585 evaluated=0 cache_hit=True source=LlamaRAMCache
+[2026-11-25 13:16:36]  INFO      inference_engine      Prefill 73763fcb: total=586 reused=585 evaluated=0 cache_hit=True in 0.2s
+[2026-11-25 13:17:37]  INFO      inference_engine      Slot 0 held 310.9s (idle 0.3s, phase=generation) request 73763fcb — long but progressing
+[2026-11-25 13:18:37]  INFO      inference_engine      Slot 0 held 370.9s (idle 0.2s, phase=generation) request 73763fcb — long but progressing
+[2026-11-25 13:19:37]  INFO      inference_engine      Slot 0 held 430.9s (idle 0.4s, phase=generation) request 73763fcb — long but progressing
+[2026-11-25 13:20:37]  INFO      inference_engine      Slot 0 held 490.9s (idle 0.1s, phase=generation) request 73763fcb — long but progressing
+[2026-11-25 13:21:31]  INFO      inference_engine      Request 73763fcb carries an explicit 3600s total deadline; it will be enforced by the caller, not by AsyncTokenBuffer.
+[2026-11-25 13:21:31]  INFO      inference_engine      Prefill budget for 73763fcb: 120.0s (est_prompt_tokens=1098, ewma_prefill_tps=4.00)
+[2026-11-25 13:21:31]  INFO      chunked_prefill       chunked_prefill entry: total=1098 min_tokens=256 chunk=256 cache_present=True cache_entries=2
+[2026-11-25 13:21:32]  INFO      chunked_prefill       chunked_prefill cache HIT via LlamaRAMCache: reused=1097/1098 tokens (stored seq had 1097)
+[2026-11-25 13:21:32]  INFO      chunked_prefill       chunked_prefill done: total=1098 reused=1097 evaluated=0 cache_hit=True source=LlamaRAMCache
+[2026-11-25 13:21:32]  INFO      inference_engine      Prefill 73763fcb: total=1098 reused=1097 evaluated=0 cache_hit=True in 0.3s
+[2026-11-25 13:21:37]  INFO      inference_engine      Slot 0 held 550.9s (idle 0.0s, phase=generation) request 73763fcb — long but progressing
+[2026-11-25 13:22:37]  INFO      inference_engine      Slot 0 held 610.9s (idle 0.2s, phase=generation) request 73763fcb — long but progressing
+[2026-11-25 13:23:33]  WARNING   telemetry             ANOMALY [warning]: gpu_0_temp=88.00 (z=3.0, mean=89.74)
+[2026-11-25 13:23:37]  INFO      inference_engine      Slot 0 held 670.9s (idle 0.4s, phase=generation) request 73763fcb — long but progressing
+[2026-11-25 13:24:33]  WARNING   telemetry             ANOMALY [warning]: gpu_0_temp=86.00 (z=3.2, mean=89.46)
+[2026-11-25 13:24:37]  INFO      inference_engine      Slot 0 held 730.9s (idle 0.4s, phase=generation) request 73763fcb — long but progressing
+[2026-11-25 13:25:37]  INFO      inference_engine      Slot 0 held 790.9s (idle 0.0s, phase=generation) request 73763fcb — long but progressing
+[2026-11-25 13:25:53]  WARNING   telemetry             ANOMALY [warning]: gpu_0_temp=82.00 (z=3.5, mean=88.72)
+[2026-11-25 13:25:57]  INFO      inference_engine      Request 73763fcb carries an explicit 3600s total deadline; it will be enforced by the caller, not by AsyncTokenBuffer.
+[2026-11-25 13:25:57]  INFO      inference_engine      Prefill budget for 73763fcb: 120.0s (est_prompt_tokens=1610, ewma_prefill_tps=4.00)
+[2026-11-25 13:25:57]  INFO      chunked_prefill       chunked_prefill entry: total=1610 min_tokens=256 chunk=256 cache_present=True cache_entries=3
+[2026-11-25 13:25:57]  INFO      chunked_prefill       chunked_prefill cache HIT via LlamaRAMCache: reused=1609/1610 tokens (stored seq had 1609)
+[2026-11-25 13:25:57]  INFO      chunked_prefill       chunked_prefill done: total=1610 reused=1609 evaluated=0 cache_hit=True source=LlamaRAMCache
+[2026-11-25 13:25:57]  INFO      inference_engine      Prefill 73763fcb: total=1610 reused=1609 evaluated=0 cache_hit=True in 0.4s
+[2026-11-25 13:26:37]  INFO      inference_engine      Slot 0 held 850.9s (idle 0.2s, phase=generation) request 73763fcb — long but progressing
+[2026-11-25 13:27:37]  INFO      inference_engine      Slot 0 held 910.9s (idle 0.2s, phase=generation) request 73763fcb — long but progressing
+[2026-11-25 13:28:37]  INFO      inference_engine      Slot 0 held 970.9s (idle 0.1s, phase=generation) request 73763fcb — long but progressing
+[2026-11-25 13:29:37]  INFO      inference_engine      Slot 0 held 1030.9s (idle 0.3s, phase=generation) request 73763fcb — long but progressing
+[2026-11-25 13:30:16]  INFO      inference_engine      Request 73763fcb carries an explicit 3600s total deadline; it will be enforced by the caller, not by AsyncTokenBuffer.
+[2026-11-25 13:30:16]  INFO      inference_engine      Prefill budget for 73763fcb: 120.0s (est_prompt_tokens=2122, ewma_prefill_tps=4.00)
+[2026-11-25 13:30:16]  INFO      chunked_prefill       chunked_prefill entry: total=2122 min_tokens=256 chunk=256 cache_present=True cache_entries=4
+[2026-11-25 13:30:16]  INFO      chunked_prefill       chunked_prefill cache HIT via LlamaRAMCache: reused=2121/2122 tokens (stored seq had 2121)
+[2026-11-25 13:30:16]  INFO      chunked_prefill       chunked_prefill done: total=2122 reused=2121 evaluated=0 cache_hit=True source=LlamaRAMCache
+[2026-11-25 13:30:16]  INFO      inference_engine      Prefill 73763fcb: total=2122 reused=2121 evaluated=0 cache_hit=True in 0.5s
+[2026-11-25 13:30:37]  INFO      inference_engine      Slot 0 held 1090.9s (idle 0.4s, phase=generation) request 73763fcb — long but progressing
+[2026-11-25 13:31:37]  INFO      inference_engine      Slot 0 held 1150.9s (idle 0.3s, phase=generation) request 73763fcb — long but progressing
+[2026-11-25 13:32:37]  INFO      inference_engine      Slot 0 held 1210.9s (idle 0.4s, phase=generation) request 73763fcb — long but progressing
+[2026-11-25 13:33:37]  INFO      inference_engine      Slot 0 held 1270.9s (idle 0.2s, phase=generation) request 73763fcb — long but progressing
+[2026-11-25 13:34:09]  WARNING   telemetry             ANOMALY [warning]: gpu_0_temp=81.00 (z=4.1, mean=83.84)
+[2026-11-25 13:34:12]  INFO      inference_engine      Slot 0 released for request 73763fcb
+[2026-11-25 13:34:12]  WARNING   api_server            Decode 1.92 tok/s for 'granite-4.2-8b' is 68% of its benchmark (2.81 tok/s, KV=f16). Likely configuration drift or contention — run `llm-server calibrate --force` with the service stopped.
+[2026-11-25 13:34:12]  INFO      api_server            POST /v1/chat/smart → 200  1306395.0ms  tok=2498  ttft=7707ms  dec_tps=1.92  key=web3  id=73763fcb
+[2026-11-25 13:34:12]  INFO      vram_manager          VRAM defragmentation is a no-op on this hardware (no CUDA / no MPS backend); skipping defrag calls silently from now on
+[2026-11-25 13:39:01]  INFO      inference_engine      Slot 0 acquired for request 5ec9105f
+[2026-11-25 13:39:01]  INFO      inference_engine      Slot 0 assigned to segmented request 5ec9105f
+[2026-11-25 13:39:01]  INFO      inference_engine      Segment 0 starting from 313 accumulated characters
+[2026-11-25 13:39:01]  INFO      inference_engine      Request 5ec9105f carries an explicit 3600s total deadline; it will be enforced by the caller, not by AsyncTokenBuffer.
+[2026-11-25 13:39:01]  INFO      inference_engine      Prefill budget for 5ec9105f: 120.0s (est_prompt_tokens=74, ewma_prefill_tps=4.00)
+[2026-11-25 13:39:01]  INFO      chunked_prefill       chunked_prefill entry: total=74 min_tokens=256 chunk=256 cache_present=True cache_entries=5
+[2026-11-25 13:39:01]  INFO      chunked_prefill       chunked_prefill skip: prompt 74 tok < min_tokens 256 — leaving evaluation to the caller's generate() path
+[2026-11-25 13:39:01]  INFO      inference_engine      Prefill 5ec9105f: total=74 reused=0 evaluated=0 cache_hit=False in 0.0s
+[2026-11-25 13:42:41]  INFO      inference_engine      Segment 1 starting from 2501 accumulated characters
+[2026-11-25 13:42:41]  INFO      inference_engine      Request 5ec9105f carries an explicit 3600s total deadline; it will be enforced by the caller, not by AsyncTokenBuffer.
+[2026-11-25 13:42:41]  INFO      inference_engine      Prefill budget for 5ec9105f: 120.0s (est_prompt_tokens=586, ewma_prefill_tps=4.00)
+[2026-11-25 13:42:41]  INFO      chunked_prefill       chunked_prefill entry: total=586 min_tokens=256 chunk=256 cache_present=True cache_entries=6
+[2026-11-25 13:42:41]  INFO      chunked_prefill       chunked_prefill cache HIT via LlamaRAMCache: reused=585/586 tokens (stored seq had 585)
+[2026-11-25 13:42:41]  INFO      chunked_prefill       chunked_prefill done: total=586 reused=585 evaluated=0 cache_hit=True source=LlamaRAMCache
+[2026-11-25 13:42:41]  INFO      inference_engine      Prefill 5ec9105f: total=586 reused=585 evaluated=0 cache_hit=True in 0.2s
+[2026-11-25 13:44:37]  INFO      inference_engine      Slot 0 held 335.4s (idle 0.5s, phase=generation) request 5ec9105f — long but progressing
+[2026-11-25 13:45:37]  INFO      inference_engine      Slot 0 held 395.4s (idle 0.1s, phase=generation) request 5ec9105f — long but progressing
+[2026-11-25 13:46:24]  INFO      inference_engine      Segment 2 starting from 4255 accumulated characters
+[2026-11-25 13:46:24]  INFO      inference_engine      Request 5ec9105f carries an explicit 3600s total deadline; it will be enforced by the caller, not by AsyncTokenBuffer.
+[2026-11-25 13:46:24]  INFO      inference_engine      Prefill budget for 5ec9105f: 120.0s (est_prompt_tokens=1098, ewma_prefill_tps=4.00)
+[2026-11-25 13:46:24]  INFO      chunked_prefill       chunked_prefill entry: total=1098 min_tokens=256 chunk=256 cache_present=True cache_entries=6
+[2026-11-25 13:46:25]  INFO      chunked_prefill       chunked_prefill cache HIT via LlamaRAMCache: reused=1097/1098 tokens (stored seq had 1097)
+[2026-11-25 13:46:25]  INFO      chunked_prefill       chunked_prefill done: total=1098 reused=1097 evaluated=0 cache_hit=True source=LlamaRAMCache
+[2026-11-25 13:46:25]  INFO      inference_engine      Prefill 5ec9105f: total=1098 reused=1097 evaluated=0 cache_hit=True in 0.3s
+[2026-11-25 13:46:37]  INFO      inference_engine      Slot 0 held 455.4s (idle 0.0s, phase=generation) request 5ec9105f — long but progressing
+[2026-11-25 13:47:37]  INFO      inference_engine      Slot 0 held 515.4s (idle 0.0s, phase=generation) request 5ec9105f — long but progressing
+[2026-11-25 13:48:37]  INFO      inference_engine      Slot 0 held 575.4s (idle 0.3s, phase=generation) request 5ec9105f — long but progressing
+[2026-11-25 13:49:37]  INFO      inference_engine      Slot 0 held 635.4s (idle 0.0s, phase=generation) request 5ec9105f — long but progressing
+[2026-11-25 13:50:14]  INFO      inference_engine      Segment 3 starting from 6305 accumulated characters
+[2026-11-25 13:50:14]  INFO      inference_engine      Request 5ec9105f carries an explicit 3600s total deadline; it will be enforced by the caller, not by AsyncTokenBuffer.
+[2026-11-25 13:50:14]  INFO      inference_engine      Prefill budget for 5ec9105f: 120.0s (est_prompt_tokens=1610, ewma_prefill_tps=4.00)
+[2026-11-25 13:50:14]  INFO      chunked_prefill       chunked_prefill entry: total=1610 min_tokens=256 chunk=256 cache_present=True cache_entries=6
+[2026-11-25 13:50:14]  INFO      chunked_prefill       chunked_prefill cache HIT via LlamaRAMCache: reused=1609/1610 tokens (stored seq had 1609)
+[2026-11-25 13:50:14]  INFO      chunked_prefill       chunked_prefill done: total=1610 reused=1609 evaluated=0 cache_hit=True source=LlamaRAMCache
+[2026-11-25 13:50:14]  INFO      inference_engine      Prefill 5ec9105f: total=1610 reused=1609 evaluated=0 cache_hit=True in 0.4s
+[2026-11-25 13:50:16]  WARNING   telemetry             ANOMALY [warning]: gpu_0_temp=86.00 (z=4.1, mean=81.03)
+[2026-11-25 13:50:37]  INFO      inference_engine      Slot 0 held 695.4s (idle 0.3s, phase=generation) request 5ec9105f — long but progressing
+[2026-11-25 13:51:37]  INFO      inference_engine      Slot 0 held 755.4s (idle 0.0s, phase=generation) request 5ec9105f — long but progressing
+[2026-11-25 13:52:37]  INFO      inference_engine      Slot 0 held 815.4s (idle 0.5s, phase=generation) request 5ec9105f — long but progressing
+[2026-11-25 13:53:37]  INFO      inference_engine      Slot 0 held 875.4s (idle 0.1s, phase=generation) request 5ec9105f — long but progressing
+[2026-11-25 13:54:08]  INFO      inference_engine      Segment 4 starting from 8355 accumulated characters
+[2026-11-25 13:54:08]  INFO      inference_engine      Request 5ec9105f carries an explicit 3600s total deadline; it will be enforced by the caller, not by AsyncTokenBuffer.
+[2026-11-25 13:54:08]  INFO      inference_engine      Prefill budget for 5ec9105f: 120.0s (est_prompt_tokens=2122, ewma_prefill_tps=4.00)
+[2026-11-25 13:54:08]  INFO      chunked_prefill       chunked_prefill entry: total=2122 min_tokens=256 chunk=256 cache_present=True cache_entries=6
+[2026-11-25 13:54:09]  INFO      chunked_prefill       chunked_prefill cache HIT via LlamaRAMCache: reused=2121/2122 tokens (stored seq had 2121)
+[2026-11-25 13:54:09]  INFO      chunked_prefill       chunked_prefill done: total=2122 reused=2121 evaluated=0 cache_hit=True source=LlamaRAMCache
+[2026-11-25 13:54:09]  INFO      inference_engine      Prefill 5ec9105f: total=2122 reused=2121 evaluated=0 cache_hit=True in 0.5s
+[2026-11-25 13:54:37]  INFO      inference_engine      Slot 0 held 935.4s (idle 0.0s, phase=generation) request 5ec9105f — long but progressing
+[2026-11-25 13:55:19]  INFO      inference_engine      Segment 4 finished with natural stop → breaking loop
+[2026-11-25 13:55:19]  INFO      inference_engine      Slot 0 released for request 5ec9105f
+[2026-11-25 13:55:19]  INFO      api_server            POST /v1/chat/completions → 200  977859.4ms  tok=2176  ttft=555ms  dec_tps=2.23  key=cli  id=5ec9105f
+[2026-11-25 13:55:21]  WARNING   telemetry             ANOMALY [critical]: gpu_0_temp=77.00 (z=5.9, mean=82.39)
+[2026-11-25 13:56:21]  WARNING   telemetry             ANOMALY [warning]: gpu_0_temp=60.00 (z=3.2, mean=80.15)
+[2026-11-25 13:56:39]  INFO      inference_engine      Slot 0 acquired for request 4e0a6e20
+[2026-11-25 13:56:39]  INFO      inference_engine      Slot 0 assigned to stream request 4e0a6e20
+[2026-11-25 13:56:39]  INFO      inference_engine      Dispatching stream request 4e0a6e20 to backend
+[2026-11-25 13:56:39]  INFO      inference_engine      Request 4e0a6e20 carries an explicit 3600s total deadline; it will be enforced by the caller, not by AsyncTokenBuffer.
+[2026-11-25 13:56:39]  INFO      inference_engine      Prefill budget for 4e0a6e20: 120.0s (est_prompt_tokens=114, ewma_prefill_tps=4.00)
+[2026-11-25 13:56:39]  INFO      chunked_prefill       chunked_prefill entry: total=114 min_tokens=256 chunk=256 cache_present=True cache_entries=6
+[2026-11-25 13:56:39]  INFO      chunked_prefill       chunked_prefill skip: prompt 114 tok < min_tokens 256 — leaving evaluation to the caller's generate() path
+[2026-11-25 13:56:39]  INFO      inference_engine      Prefill 4e0a6e20: total=114 reused=0 evaluated=0 cache_hit=False in 0.0s
+[2026-11-25 14:00:17]  INFO      inference_engine      Request 4e0a6e20 carries an explicit 3600s total deadline; it will be enforced by the caller, not by AsyncTokenBuffer.
+[2026-11-25 14:00:17]  INFO      inference_engine      Prefill budget for 4e0a6e20: 120.0s (est_prompt_tokens=614, ewma_prefill_tps=4.00)
+[2026-11-25 14:00:17]  INFO      chunked_prefill       chunked_prefill entry: total=614 min_tokens=256 chunk=256 cache_present=True cache_entries=6
+[2026-11-25 14:00:17]  INFO      chunked_prefill       chunked_prefill cache HIT via LlamaRAMCache: reused=498/614 tokens (stored seq had 625)
+[2026-11-25 14:00:25]  INFO      chunked_prefill       chunked_prefill done: total=614 reused=498 evaluated=115 cache_hit=True source=LlamaRAMCache
+[2026-11-25 14:00:25]  INFO      inference_engine      Prefill 4e0a6e20: total=614 reused=498 evaluated=115 cache_hit=True in 8.4s
+[2026-11-25 14:01:37]  INFO      api_server            Pruned 98 conversations
+[2026-11-25 14:01:37]  INFO      key_store             Pruned 1 expired keys
+[2026-11-25 14:02:37]  INFO      inference_engine      Slot 0 held 357.6s (idle 0.3s, phase=generation) request 4e0a6e20 — long but progressing
+[2026-11-25 14:03:37]  INFO      inference_engine      Slot 0 held 417.6s (idle 0.1s, phase=generation) request 4e0a6e20 — long but progressing
+[2026-11-25 14:03:59]  INFO      inference_engine      Request 4e0a6e20 carries an explicit 3600s total deadline; it will be enforced by the caller, not by AsyncTokenBuffer.
+[2026-11-25 14:03:59]  INFO      inference_engine      Prefill budget for 4e0a6e20: 245.3s (est_prompt_tokens=1126, ewma_prefill_tps=13.77)
+[2026-11-25 14:03:59]  INFO      chunked_prefill       chunked_prefill entry: total=1126 min_tokens=256 chunk=41 cache_present=True cache_entries=6
+[2026-11-25 14:03:59]  INFO      chunked_prefill       chunked_prefill cache HIT via LlamaRAMCache: reused=1125/1126 tokens (stored seq had 1125)
+[2026-11-25 14:03:59]  INFO      chunked_prefill       chunked_prefill done: total=1126 reused=1125 evaluated=0 cache_hit=True source=LlamaRAMCache
+[2026-11-25 14:03:59]  INFO      inference_engine      Prefill 4e0a6e20: total=1126 reused=1125 evaluated=0 cache_hit=True in 0.3s
+[2026-11-25 14:04:37]  INFO      inference_engine      Slot 0 held 477.6s (idle 0.4s, phase=generation) request 4e0a6e20 — long but progressing
+[2026-11-25 14:05:37]  INFO      inference_engine      Slot 0 held 537.6s (idle 0.3s, phase=generation) request 4e0a6e20 — long but progressing
+[2026-11-25 14:06:37]  INFO      inference_engine      Slot 0 held 597.6s (idle 0.2s, phase=generation) request 4e0a6e20 — long but progressing
+[2026-11-25 14:07:37]  INFO      inference_engine      Slot 0 held 657.6s (idle 3.8s, phase=generation) request 4e0a6e20 — long but progressing
+[2026-11-25 14:07:37]  INFO      inference_engine      Request 4e0a6e20 carries an explicit 3600s total deadline; it will be enforced by the caller, not by AsyncTokenBuffer.
+[2026-11-25 14:07:37]  INFO      inference_engine      Prefill budget for 4e0a6e20: 356.8s (est_prompt_tokens=1638, ewma_prefill_tps=13.77)
+[2026-11-25 14:07:37]  INFO      chunked_prefill       chunked_prefill entry: total=1638 min_tokens=256 chunk=41 cache_present=True cache_entries=6
+[2026-11-25 14:07:38]  INFO      chunked_prefill       chunked_prefill cache HIT via LlamaRAMCache: reused=1637/1638 tokens (stored seq had 1637)
+[2026-11-25 14:07:38]  INFO      chunked_prefill       chunked_prefill done: total=1638 reused=1637 evaluated=0 cache_hit=True source=LlamaRAMCache
+[2026-11-25 14:07:38]  INFO      inference_engine      Prefill 4e0a6e20: total=1638 reused=1637 evaluated=0 cache_hit=True in 0.2s
+[2026-11-25 14:08:37]  INFO      inference_engine      Slot 0 held 717.6s (idle 0.0s, phase=generation) request 4e0a6e20 — long but progressing
+[2026-11-25 14:09:37]  INFO      inference_engine      Slot 0 held 777.6s (idle 0.1s, phase=generation) request 4e0a6e20 — long but progressing
+[2026-11-25 14:10:37]  INFO      inference_engine      Slot 0 held 837.6s (idle 0.1s, phase=generation) request 4e0a6e20 — long but progressing
+[2026-11-25 14:11:17]  WARNING   telemetry             ANOMALY [warning]: gpu_0_temp=80.00 (z=4.0, mean=82.76)
+[2026-11-25 14:11:20]  INFO      inference_engine      Request 4e0a6e20 carries an explicit 3600s total deadline; it will be enforced by the caller, not by AsyncTokenBuffer.
+[2026-11-25 14:11:20]  INFO      inference_engine      Prefill budget for 4e0a6e20: 468.4s (est_prompt_tokens=2150, ewma_prefill_tps=13.77)
+[2026-11-25 14:11:20]  INFO      chunked_prefill       chunked_prefill entry: total=2150 min_tokens=256 chunk=41 cache_present=True cache_entries=6
+[2026-11-25 14:11:20]  INFO      chunked_prefill       chunked_prefill cache HIT via LlamaRAMCache: reused=2149/2150 tokens (stored seq had 2149)
+[2026-11-25 14:11:20]  INFO      chunked_prefill       chunked_prefill done: total=2150 reused=2149 evaluated=0 cache_hit=True source=LlamaRAMCache
+[2026-11-25 14:11:20]  INFO      inference_engine      Prefill 4e0a6e20: total=2150 reused=2149 evaluated=0 cache_hit=True in 0.3s
+[2026-11-25 14:11:37]  INFO      inference_engine      Slot 0 held 897.6s (idle 0.4s, phase=generation) request 4e0a6e20 — long but progressing
+[2026-11-25 14:12:37]  INFO      inference_engine      Slot 0 held 957.6s (idle 0.1s, phase=generation) request 4e0a6e20 — long but progressing
+[2026-11-25 14:13:02]  INFO      inference_engine      Slot 0 released for request 4e0a6e20
+[2026-11-25 14:13:02]  WARNING   telemetry             ANOMALY [warning]: gpu_0_temp=80.00 (z=3.4, mean=82.72)
+[2026-11-25 14:13:02]  INFO      api_server            POST /v1/chat/smart → 200  983469.5ms  tok=2257  ttft=8912ms  dec_tps=2.32  key=web3  id=4e0a6e20
+[2026-11-25 14:14:51]  WARNING   api_server            Prompt for 'granite-4.2-8b' exceeded context (144 > 1920 tokens) — dropped 1 oldest messages.
+[2026-11-25 14:14:51]  INFO      inference_engine      Slot 0 acquired for request 1b237c5f
+[2026-11-25 14:14:51]  INFO      inference_engine      Slot 0 assigned to segmented request 1b237c5f
+[2026-11-25 14:14:51]  INFO      inference_engine      Segment 0 starting from 394 accumulated characters
+[2026-11-25 14:14:51]  INFO      inference_engine      Request 1b237c5f carries an explicit 3600s total deadline; it will be enforced by the caller, not by AsyncTokenBuffer.
+[2026-11-25 14:14:51]  INFO      inference_engine      Prefill budget for 1b237c5f: 120.0s (est_prompt_tokens=114, ewma_prefill_tps=13.77)
+[2026-11-25 14:14:51]  INFO      chunked_prefill       chunked_prefill entry: total=114 min_tokens=256 chunk=41 cache_present=True cache_entries=6
+[2026-11-25 14:14:51]  INFO      chunked_prefill       chunked_prefill skip: prompt 114 tok < min_tokens 256 — leaving evaluation to the caller's generate() path
+[2026-11-25 14:14:51]  INFO      inference_engine      Prefill 1b237c5f: total=114 reused=0 evaluated=0 cache_hit=False in 0.0s
+[2026-11-25 14:18:25]  INFO      inference_engine      Segment 1 starting from 2553 accumulated characters
+[2026-11-25 14:18:25]  INFO      inference_engine      Request 1b237c5f carries an explicit 3600s total deadline; it will be enforced by the caller, not by AsyncTokenBuffer.
+[2026-11-25 14:18:25]  INFO      inference_engine      Prefill budget for 1b237c5f: 134.4s (est_prompt_tokens=617, ewma_prefill_tps=13.77)
+[2026-11-25 14:18:25]  INFO      chunked_prefill       chunked_prefill entry: total=617 min_tokens=256 chunk=41 cache_present=True cache_entries=6
+[2026-11-25 14:18:25]  INFO      chunked_prefill       chunked_prefill cache HIT via LlamaRAMCache: reused=447/617 tokens (stored seq had 625)
+[2026-11-25 14:18:41]  INFO      chunked_prefill       chunked_prefill done: total=617 reused=447 evaluated=169 cache_hit=True source=LlamaRAMCache
+[2026-11-25 14:18:41]  INFO      inference_engine      Prefill 1b237c5f: total=617 reused=447 evaluated=169 cache_hit=True in 16.1s
+[2026-11-25 14:20:31]  INFO      inference_engine      Slot 0 held 345.5s (idle 0.2s, phase=generation) request 1b237c5f — long but progressing
+[2026-11-25 14:21:31]  INFO      inference_engine      Slot 0 held 405.5s (idle 0.2s, phase=generation) request 1b237c5f — long but progressing
+[2026-11-25 14:22:26]  INFO      inference_engine      Segment 2 starting from 4793 accumulated characters
+[2026-11-25 14:22:26]  INFO      inference_engine      Request 1b237c5f carries an explicit 3600s total deadline; it will be enforced by the caller, not by AsyncTokenBuffer.
+[2026-11-25 14:22:26]  INFO      inference_engine      Prefill budget for 1b237c5f: 248.9s (est_prompt_tokens=1129, ewma_prefill_tps=13.61)
+[2026-11-25 14:22:26]  INFO      chunked_prefill       chunked_prefill entry: total=1129 min_tokens=256 chunk=40 cache_present=True cache_entries=6
+[2026-11-25 14:22:26]  INFO      chunked_prefill       chunked_prefill cache HIT via LlamaRAMCache: reused=1128/1129 tokens (stored seq had 1128)
+[2026-11-25 14:22:26]  INFO      chunked_prefill       chunked_prefill done: total=1129 reused=1128 evaluated=0 cache_hit=True source=LlamaRAMCache
+[2026-11-25 14:22:26]  INFO      inference_engine      Prefill 1b237c5f: total=1129 reused=1128 evaluated=0 cache_hit=True in 0.2s
+[2026-11-25 14:22:31]  INFO      inference_engine      Slot 0 held 465.5s (idle 0.2s, phase=generation) request 1b237c5f — long but progressing
+[2026-11-25 14:23:31]  INFO      inference_engine      Slot 0 held 525.5s (idle 0.2s, phase=generation) request 1b237c5f — long but progressing
+[2026-11-25 14:24:31]  INFO      inference_engine      Slot 0 held 585.5s (idle 0.3s, phase=generation) request 1b237c5f — long but progressing
+[2026-11-25 14:25:31]  INFO      inference_engine      Slot 0 held 645.5s (idle 0.4s, phase=generation) request 1b237c5f — long but progressing
+[2026-11-25 14:26:16]  INFO      inference_engine      Segment 3 starting from 6925 accumulated characters
+[2026-11-25 14:26:16]  INFO      inference_engine      Request 1b237c5f carries an explicit 3600s total deadline; it will be enforced by the caller, not by AsyncTokenBuffer.
+[2026-11-25 14:26:16]  INFO      inference_engine      Prefill budget for 1b237c5f: 361.8s (est_prompt_tokens=1641, ewma_prefill_tps=13.61)
+[2026-11-25 14:26:16]  INFO      chunked_prefill       chunked_prefill entry: total=1641 min_tokens=256 chunk=40 cache_present=True cache_entries=6
+[2026-11-25 14:26:16]  INFO      chunked_prefill       chunked_prefill cache HIT via LlamaRAMCache: reused=1640/1641 tokens (stored seq had 1640)
+[2026-11-25 14:26:16]  INFO      chunked_prefill       chunked_prefill done: total=1641 reused=1640 evaluated=0 cache_hit=True source=LlamaRAMCache
+[2026-11-25 14:26:16]  INFO      inference_engine      Prefill 1b237c5f: total=1641 reused=1640 evaluated=0 cache_hit=True in 0.3s
+[2026-11-25 14:26:31]  INFO      inference_engine      Slot 0 held 705.5s (idle 0.1s, phase=generation) request 1b237c5f — long but progressing
+[2026-11-25 14:27:31]  INFO      inference_engine      Slot 0 held 765.5s (idle 0.3s, phase=generation) request 1b237c5f — long but progressing
+[2026-11-25 14:28:31]  INFO      inference_engine      Slot 0 held 825.5s (idle 0.2s, phase=generation) request 1b237c5f — long but progressing
+[2026-11-25 14:29:31]  INFO      inference_engine      Slot 0 held 885.5s (idle 0.2s, phase=generation) request 1b237c5f — long but progressing
+[2026-11-25 14:30:08]  WARNING   telemetry             ANOMALY [warning]: gpu_0_temp=79.00 (z=4.2, mean=82.05)
+[2026-11-25 14:30:11]  INFO      inference_engine      Segment 4 starting from 9166 accumulated characters
+[2026-11-25 14:30:11]  INFO      inference_engine      Request 1b237c5f carries an explicit 3600s total deadline; it will be enforced by the caller, not by AsyncTokenBuffer.
+[2026-11-25 14:30:11]  INFO      inference_engine      Prefill budget for 1b237c5f: 474.7s (est_prompt_tokens=2153, ewma_prefill_tps=13.61)
+[2026-11-25 14:30:11]  INFO      chunked_prefill       chunked_prefill entry: total=2153 min_tokens=256 chunk=40 cache_present=True cache_entries=6
+[2026-11-25 14:30:11]  INFO      chunked_prefill       chunked_prefill cache HIT via LlamaRAMCache: reused=2152/2153 tokens (stored seq had 2152)
+[2026-11-25 14:30:11]  INFO      chunked_prefill       chunked_prefill done: total=2153 reused=2152 evaluated=0 cache_hit=True source=LlamaRAMCache
+[2026-11-25 14:30:11]  INFO      inference_engine      Prefill 1b237c5f: total=2153 reused=2152 evaluated=0 cache_hit=True in 0.4s
+[2026-11-25 14:30:31]  INFO      inference_engine      Slot 0 held 945.5s (idle 0.1s, phase=generation) request 1b237c5f — long but progressing
+[2026-11-25 14:31:31]  INFO      inference_engine      Slot 0 held 1005.5s (idle 4.2s, phase=generation) request 1b237c5f — long but progressing
+[2026-11-25 14:31:34]  WARNING   telemetry             ANOMALY [warning]: gpu_0_temp=79.00 (z=4.1, mean=82.13)
+[2026-11-25 14:31:35]  INFO      inference_engine      Segment 4 finished with natural stop → breaking loop
+[2026-11-25 14:31:35]  INFO      inference_engine      Slot 0 released for request 1b237c5f
+[2026-11-25 14:31:35]  INFO      api_server            POST /v1/chat/completions → 200  1008802.6ms  tok=2204  ttft=502ms  dec_tps=2.18  key=cli  id=1b237c5f
+[2026-11-25 14:33:41]  INFO      performance_analyzer  Configuration loaded from /home/deve-oops/AMB-OPT/local-llm-cloud/local-llm-server/config.yaml
+[2026-11-25 14:34:05]  INFO      uvicorn.error         Shutting down
+[2026-11-25 14:34:06]  INFO      uvicorn.error         Waiting for application shutdown.
+[2026-11-25 14:34:06]  INFO      api_server            Shutting down…
+[2026-11-25 14:34:06]  INFO      system_optimizer      [DRY-RUN] would restore 0 baseline entries
+[2026-11-25 14:34:06]  WARNING   _internal             Log handler reaper task stopped
+[2026-11-25 14:34:06]  INFO      suspend_inhibitor     SuspendInhibitor: released.
+[2026-11-25 14:34:06]  INFO      inference_engine      InferenceEngine shutdown (req=3 tok=4756 err=0 oom=0)
+[2026-11-25 14:34:06]  INFO      vram_manager          Shutting down VRAMManager...
+[2026-11-25 14:34:06]  INFO      vram_manager          Background defrag thread stopped
+[2026-11-25 14:34:06]  INFO      vram_manager          VRAMManager shutdown complete
+[2026-11-25 14:34:06]  INFO      hybrid_manager        HybridMemoryManager shutdown complete (read_errors=0 write_errors=0)
+[2026-11-25 14:34:06]  INFO      ram_optimizer         RAMOptimizer: closed 0 mmap handles
+[2026-11-25 14:34:06]  INFO      ram_optimizer         RAMOptimizer shutdown complete
+[2026-11-25 14:34:06]  INFO      swap_handler          SwapHandler shutdown: 0 entries, 0.0 MB used
+[2026-11-25 14:34:06]  INFO      telemetry             Telemetry collection stopped
+[2026-11-25 14:34:06]  INFO      model_loader          Unloading model 'granite-4.2-8b'
+[2026-11-25 14:34:06]  INFO      model_loader          Model 'granite-4.2-8b' unloaded (clean=True)
+[2026-11-25 14:34:06]  INFO      key_store             KeyStore database connection closed
+[2026-11-25 14:34:06]  INFO      api_server            Server stopped.
+[2026-11-25 14:34:06]  INFO      uvicorn.error         Application shutdown complete.
+[2026-11-25 14:34:06]  INFO      uvicorn.error         Finished server process [635242]
+[2026-11-25 14:34:15]  INFO      api_server            Log format: minimal → /home/deve-oops/AMB-OPT/local-llm-cloud/logs/llm_server.log
+[2026-11-25 14:34:15]  INFO      api_server            ⚡ Local LLM Cloud v1.0.0 starting
+[2026-11-25 14:34:15]  INFO      api_server            BitNet enabled: False
+[2026-11-25 14:34:16]  INFO      uvicorn.error         Started server process [685395]
+[2026-11-25 14:34:16]  INFO      uvicorn.error         Waiting for application startup.
+[2026-11-25 14:34:16]  INFO      api_server            ╔══ Local LLM Cloud v1.0.0 starting (pid=685395) ══╗
+[2026-11-25 14:34:16]  INFO      api_server            === Running startup validation ===
+[2026-11-25 14:34:16]  INFO      api_server            ✓ llama-cpp-python available
+[2026-11-25 14:34:16]  INFO      api_server            ✓ aiosqlite available
+[2026-11-25 14:34:16]  INFO      api_server            ✓ SPECTRE PYTHONPATH applied
+[2026-11-25 14:34:16]  INFO      model_unified_env     BitNetState loaded from /home/deve-oops/.config/local-llm/bitnet_state.json (available=False)
+[2026-11-25 14:34:16]  INFO      api_server            ✓ Model: loader ready  (profile='qwen3-8b'  backend=gguf)
+[2026-11-25 14:34:16]  INFO      api_server            === Startup validation passed ===
+[2026-11-25 14:34:16]  INFO      hardware_detector     Starting hardware detection ...
+[2026-11-25 14:34:16]  INFO      hardware_detector     Adaptive facts: ram_channels=1  bw_theoretical=19.2 GB/s  gtt_total=6928 bw_measured=12.4 GB/s  llama_cpp_backends=['gpu', 'cpu']  gpu_offload=True
+[2026-11-25 14:34:16]  INFO      hardware_detector     Detection done: 1 GPU(s), primary=Advanced Micro Devices, Inc. [AMD/ATI] Picasso/Raven 2 [Radeon Vega Series / Radeon Vega Mobile Series] (rev c1), recommended=rocm
+[2026-11-25 14:34:16]  INFO      api_server            GPU detection: rocm (1 GPU(s))
+[2026-11-25 14:34:17]  INFO      hardware_profiles     Bandwidth selection: 12.4 GB/s (measurement (65% of theory))
+[2026-11-25 14:34:17]  INFO      hardware_profiles     target_tps=8.00 from tier_default (no bench, no model size yet — will refine after load)
+[2026-11-25 14:34:17]  INFO      hardware_profiles     UMA APU budget (carve-out ONLY): carve_out=2048 MB gtt=6928 MB (not used) reserve=200 MB
+[2026-11-25 14:34:17]  INFO      hardware_profiles     Applying profile‑specific overrides for 'apu_2gb': {'context_length': 4096, 'n_batch': 2048, 'n_parallel': 1, 'flash_attn': True, 'context_vs_layers_priority': 'layers', 'kv_cache_quant': 'f16', 'speculative_decoding': False, 'use_mlock': False}
+[2026-11-25 14:34:17]  INFO      hardware_profiles     Computed profile: name=apu_2gb target_tps=8.00 [tier_default] n_batch=2048/512 ctx=4096 kv=f16 n_parallel=1 spec=False priority=layers mlock=False [ram_ch=1 bw_meas=12.4 bw_theo=19.2 gtt=6928 eff_vram=6381]
+[2026-11-25 14:34:17]  INFO      api_server            Calibration: qwen3-8b: measuring f16 KV, 36/36 layers
+[2026-11-25 14:35:14]  INFO      api_server            Calibration: qwen3-8b: measuring q8_0 KV, 36/36 layers
+[2026-11-25 14:36:06]  INFO      api_server            Calibration: qwen3-8b: re-measuring f16 KV (warm)
+[2026-11-25 14:36:56]  INFO      calibrate             calibrated qwen3-8b: 2.76 tok/s decode, 17.4 tok/s prefill, KV=f16, layers=36/36
+[2026-11-25 14:36:56]  INFO      api_server            autoconfig: machine: AMD Ryzen 7 3700U with Radeon Vega Mobile Gfx · 4c/8t · RAM 13856 MB (1-ch, 12.5 GB/s) · hip (Advanced Micro Devices, Inc. [AMD/ATI] Picasso/Raven 2 [Radeon Vega Series / Radeon Vega Mobile Series] (rev c1), unified)
+[2026-11-25 14:36:56]  INFO      api_server            autoconfig: budgets: RAM 10392 MB · device 6235 MB · resident: qwen3-8b
+[2026-11-25 14:36:56]  INFO      api_server            autoconfig:   granite-4.2-8b           ok        on demand ngl=40  ctx=4096   kv=f16   ram=6178 MB dev=5940 MB speed=2.81 tok/s (bench)
+[2026-11-25 14:36:56]  INFO      api_server            autoconfig:   qwen3-8b                 ok        AUTOLOAD  ngl=36  ctx=4096   kv=f16   ram=5626 MB dev=5266 MB speed=2.76 tok/s (bench)
+[2026-11-25 14:36:56]  INFO      api_server            autoconfig:   qwen3-4b                 ok        on demand ngl=36  ctx=4096   kv=f16   ram=3213 MB dev=2988 MB speed=4.25 tok/s (roofline)
+[2026-11-25 14:36:56]  INFO      api_server            autoconfig:   qwen3-0.6b               ok        on demand ngl=28  ctx=4096   kv=f16   ram=1313 MB dev=1191 MB speed=16.59 tok/s (roofline)
+[2026-11-25 14:36:56]  INFO      api_server            autoconfig:   ggml-model               ok        on demand ngl=0   ctx=4096   kv=f16   ram=1560 MB dev=0 MB speed=8.93 tok/s (roofline)
+[2026-11-25 14:36:56]  INFO      api_server            autoconfig:   calibration qwen3-8b: measured
+[2026-11-25 14:36:56]  INFO      api_server            autoconfig:   warning: ggml-model: single-channel RAM: CPU-resident layers decode slowly
+[2026-11-25 14:36:56]  INFO      api_server            autoconfig: computed profiles written to /var/lib/local-llm/model_profiles.json
+[2026-11-25 14:36:56]  INFO      api_server            Memory budget: vram_target=0.95 ram_target=0.75 (source=memory.ram_utilization_target)
+[2026-11-25 14:36:57]  INFO      vram_manager          VRAMManager: 2.1 GB total, target util=95.0%, defrag threshold=30.0%, bg interval=60.0s, cuda=False, mps=False
+[2026-11-25 14:36:57]  INFO      vram_manager          Background defrag thread started (interval=60.0s)
+[2026-11-25 14:36:57]  INFO      ram_optimizer         RAMOptimizer: max=10392 MB lz4=True max_mmaps=64 max_prefetch=16
+[2026-11-25 14:36:57]  INFO      swap_handler          SwapHandler: dir=/var/lib/local-llm/swap max=32.0GB compress=True recovered=0 entries
+[2026-11-25 14:36:57]  INFO      hybrid_manager        HybridMemoryManager: vram=2048MB ram=13856MB ssd=32768MB compress=True
+[2026-11-25 14:36:57]  INFO      seq_planner           continuous_batching.n_seq_max=auto → 4  (n_ctx=4096 weights=4795MB avail=11623MB cores=4)
+[2026-11-25 14:36:57]  INFO      hardware_profiles     Bandwidth selection: 12.4 GB/s (measurement (65% of theory))
+[2026-11-25 14:36:57]  INFO      hardware_profiles     target_tps=8.00 from tier_default (no bench, no model size yet — will refine after load)
+[2026-11-25 14:36:57]  INFO      hardware_profiles     UMA APU budget (carve-out ONLY): carve_out=2048 MB gtt=6928 MB (not used) reserve=200 MB
+[2026-11-25 14:36:57]  INFO      hardware_profiles     Applying profile‑specific overrides for 'apu_2gb': {'context_length': 4096, 'n_batch': 2048, 'n_parallel': 1, 'flash_attn': True, 'context_vs_layers_priority': 'layers', 'kv_cache_quant': 'f16', 'speculative_decoding': False, 'use_mlock': False}
+[2026-11-25 14:36:57]  INFO      hardware_profiles     Computed profile: name=apu_2gb target_tps=8.00 [tier_default] n_batch=2048/512 ctx=4096 kv=f16 n_parallel=1 spec=False priority=layers mlock=False [ram_ch=1 bw_meas=12.4 bw_theo=19.2 gtt=6928 eff_vram=6381]
+[2026-11-25 14:36:57]  INFO      model_loader          ModelLoader profile=apu_2gb vram_budget=1745MB
+[2026-11-25 14:36:57]  INFO      drive_pipeline        CPUThrottler: 4 physical cores → 4 threads
+[2026-11-25 14:36:57]  INFO      drive_pipeline        All BLAS thread env vars → 4
+[2026-11-25 14:36:57]  INFO      model_loader          AsyncWeightPipeline disabled (model_loader.async_weight_pipeline_enabled=false) — no madvise prefetch thread will run. The prefetch guesses layer byte ranges from file size with no feedback from llama.cpp, so on memory-bandwidth-bound hardware it competes with decode rather than helping it. See config.yaml's model_loader.async_weight_pipeline_enabled comment for how to benchmark a change.
+[2026-11-25 14:36:57]  INFO      api_server            Kernels subsystem: enabled=False
+[2026-11-25 14:36:57]  INFO      inference_engine      BitNet disabled by config — skipping BitNet loader
+[2026-11-25 14:36:57]  INFO      inference_engine      Drive pipeline active
+[2026-11-25 14:36:57]  INFO      scheduler             Scheduler initialization starting...
+[2026-11-25 14:36:57]  INFO      scheduler             Scheduler AIMD config: target_tps=3.1 batch=[1,1] interval=5.0s hysteresis=2 margins=[0.85, 0.95]
+[2026-11-25 14:36:57]  WARNING   scheduler             Scheduler queue limits: per_priority=64 total=256
+[2026-11-25 14:36:57]  INFO      scheduler             Priority weights configured: {'LOW': 1, 'NORMAL': 2, 'HIGH': 4, 'URGENT': 8} (ratio: 8.0:1)
+[2026-11-25 14:36:57]  WARNING   scheduler             Scheduler preemption persistence: disabled (in-memory only)
+[2026-11-25 14:36:57]  INFO      scheduler             Scheduler initialized: batch=1 queue=[64,256] prune_interval=10.0s preempt_persist=disabled thermal_throttle=inactive
+[2026-11-25 14:36:57]  INFO      inference_engine      UniversalKernelManager disabled (kernels.enabled=false) — GGUF path does not use PyTorch kernels
+[2026-11-25 14:36:57]  INFO      inference_engine      Faulthandler enabled → /var/lib/local-llm/crash.log
+[2026-11-25 14:36:57]  INFO      inference_engine      Native llama.cpp log → /var/lib/local-llm/llama_native.log
+[2026-11-25 14:36:57]  WARNING   inference_engine      _auto_register_bitnet_from_state: BitNet disabled — skipping
+[2026-11-25 14:36:57]  INFO      inference_engine      InferenceEngine v1.0.0 initialised (GGUF + BitNet, unified)
+[2026-11-25 14:36:57]  INFO      inference_engine      Continuous batching enabled in config: n_seq_max=4 kv_unified=True (batched engine will initialize on first generate_stream call once a model is loaded)
+[2026-11-25 14:36:57]  INFO      inference_engine      Scheduler start task enqueued
+[2026-11-25 14:36:57]  INFO      inference_engine      Slot health check started
+[2026-11-25 14:36:57]  INFO      api_server            ✓ GPU: rocm (1)
+[2026-11-25 14:36:57]  INFO      scheduler             Scheduler background tasks started
+[2026-11-25 14:36:57]  INFO      telemetry             Telemetry collection started (base interval=5.0s)
+[2026-11-25 14:36:57]  WARNING   _internal             Log handler reaper task started
+[2026-11-25 14:36:57]  INFO      api_server            Autoload order: reserved (primary) first, then residual (draft)
+[2026-11-25 14:36:57]  INFO      model_loader          Load [58fdc08b]: model_id='qwen3-8b' path='/home/deve-oops/models/Qwen3-8B-Q4_K_M.gguf'
+[2026-11-25 14:36:57]  INFO      model_loader          ModelLoader: 'qwen3-8b' target_tps=2.76 [bench_file] KV=f16
+[2026-11-25 14:36:57]  INFO      model_loader          Pre‑flight: model='qwen3-8b' size=4794.9MB required=5370MB usable=45900MB est TPS=2.48 status=comfortable
+[2026-11-25 14:36:57]  INFO      model_loader          Load [58fdc08b]: initiating load
+[2026-11-25 14:36:57]  INFO      model_loader          Skipping NVMe sysctls (system.allow_kernel_tuning=false) — dirty_* / vfs_cache_pressure left at host defaults
+[2026-11-25 14:36:57]  INFO      model_loader          Context sizing for 'qwen3-8b': n_ctx_train=40960, profile_floor=4096, kv_bytes/token=override, computed=4096, chosen=4096 (mc.context_length=4096)
+[2026-11-25 14:36:57]  INFO      drive_pipeline        NVMe advisor: model=4794MB  ram_free=8141MB
+[2026-11-25 14:36:57]  INFO      drive_pipeline        NVMe: SEQUENTIAL only (model=4794MB > 40% of free RAM=8141MB — WILLNEED would duplicate weights the GPU may already hold)
+[2026-11-25 14:36:57]  INFO      layer_streamer        Backend: llama_cpp
+[2026-11-25 14:36:57]  INFO      layer_streamer        AdaptiveLoader: cpus=logical:8 physical:4 threads=4 batch_threads=4 parallel=1
+[2026-11-25 14:36:57]  INFO      layer_streamer        Continuous batching requested: n_seq_max=4 kv_unified=True n_outputs_max=4 (applied via Llama(**kwargs) → context_params C struct)
+[2026-11-25 14:36:57]  INFO      layer_streamer        Load attempt 1/5: n_ctx=4096 n_batch=2048 n_ubatch=512 gpu=37 parallel=1
+[2026-11-25 14:36:57]  INFO      capabilities          llama-cpp-python caps: version=0.3.36 gpu_offload=True cache=LlamaRAMCache longest_prefix=True scores_bloat=True batch_api=False | continuous_batching: n_seq_max=True kv_unified=True llama_batch=True(llama_cpp._internals.LlamaBatch) add_sequence=True ctx_decode=True seq_rm=True params_default(n_seq_max=1 kv_unified=False)
+[2026-11-25 14:36:57]  INFO      inference_engine      LeanLlama active: stripping scores from save_state (llama-cpp-python 0.3.36, saves n_tokens×vocab×4 B per cached prefix)
+[2026-11-25 14:36:58]  INFO      conversation_store    Conversation store: postgresql initialized (pool size=10)
+[2026-11-25 14:36:58]  INFO      key_store             KeyStore initialized: backend=postgresql
+[2026-11-25 14:36:58]  INFO      api_server            ✓ KeyStore enabled
+[2026-11-25 14:36:58]  INFO      suspend_inhibitor     SuspendInhibitor: active (sleep:idle:handle-lid-switch:handle-suspend-key:handle-hibernate-key:handle-power-key) — host will not suspend/idle-sleep while this process runs.
+[2026-11-25 14:36:58]  INFO      api_server            ╚══ Ready  GPUs=1  CPU=4C/8T  RAM=13856MB  profile=apu_2gb  auth=keystore ══╝
+[2026-11-25 14:36:58]  INFO      api_server            ════════════════════════════════════════════════════════════════════════════════════════════════════
+[2026-11-25 14:36:58]  INFO      uvicorn.error         Application startup complete.
+[2026-11-25 14:36:58]  INFO      uvicorn.error         Uvicorn running on http://127.0.0.1:8080 (Press CTRL+C to quit)
+[2026-11-25 14:37:01]  INFO      performance_analyzer  Configuration loaded from /home/deve-oops/AMB-OPT/local-llm-cloud/local-llm-server/config.yaml
+[2026-11-25 14:37:02]  INFO      layer_streamer        ✓ Load successful in 4.22s | model=Qwen3-8B-Q4_K_M.gguf gpu=req=37 actual=? | ctx=req=4096 actual=4096 | batch=2048/512 parallel=1
+[2026-11-25 14:37:02]  INFO      layer_streamer        n_seq_max=4 will be applied by BatchedInferenceEngine context rebuild on first request (kwargs passthrough does not modify context_params on this llama-cpp-python build): n_seq_max mismatch: requested 4, context has 1 — Llama(**kwargs) did not apply it
+[2026-11-25 14:37:02]  INFO      layer_streamer        prefix cache sized from KV math: 147456 B/token, want=1216 MB, cap=2666 MB -> 1216 MB
+[2026-11-25 14:37:02]  INFO      layer_streamer        LlamaRAMCache attached (capacity=1216 MB) — longest-prefix lookup active
+[2026-11-25 14:37:02]  INFO      model_loader          VRAM tracker: skipping bookkeeping for 'qwen3-8b' (est 4794 MB, carve-out budget 1745 MB, GTT total 6928 MB). Model is running from GTT-addressable RAM, not the carve-out — see /v1/metrics for the driver-reported allocation.
+[2026-11-25 14:37:02]  INFO      model_loader          Loaded 'qwen3-8b' 4.3s | backend=llama_cpp | gpu=36/36 | strategy=manual | vram=4794MB
+[2026-11-25 14:37:02]  INFO      model_loader          Model 'qwen3-8b' loaded in 4.54s | gpu=36/36
+[2026-11-25 14:37:02]  INFO      api_server            ✓ Autoloaded: qwen3-8b (5626 MB)
+[2026-11-25 14:37:02]  INFO      inference_engine      Batched engine device budget: 8673 MB (carve-out/VRAM 1745 + GTT 6928)
+[2026-11-25 14:37:02]  INFO      batched_engine        BatchedInferenceEngine: n_seq_max=4 (ctx=4, pf_reserved=0) n_ctx=4096 n_batch=2048 n_vocab=151936 eos=151645 prefill_chunk=511
+[2026-11-25 14:37:02]  WARNING   inference_engine      Batched engine unavailable — falling back to single-sequence. Reason: _rebuild_context refused: peak≈7612 MB (weights 4794 + new_ctx 2306 [kv 2048 + compute 256 + output 2] + margin 512) exceeds available RAM 7604 MB. ggml_abort would occur otherwise. Options: lower num_gpu_layers, lower n_seq_max, disable PF cache, or add RAM.
+[2026-11-25 14:37:02]  INFO      inference_engine      Slot 0 acquired for request warmup-q
+[2026-11-25 14:37:02]  INFO      inference_engine      Slot 0 assigned to stream request warmup-q
+[2026-11-25 14:37:02]  INFO      inference_engine      Dispatching stream request warmup-q to backend
+[2026-11-25 14:37:02]  INFO      inference_engine      Request warmup-q carries an explicit 600s total deadline; it will be enforced by the caller, not by AsyncTokenBuffer.
+[2026-11-25 14:37:02]  INFO      inference_engine      Prefill budget for warmup-q: 120.0s (est_prompt_tokens=1, ewma_prefill_tps=4.00)
+[2026-11-25 14:37:02]  INFO      chunked_prefill       chunked_prefill entry: total=1 min_tokens=256 chunk=256 cache_present=True cache_entries=0
+[2026-11-25 14:37:02]  INFO      chunked_prefill       chunked_prefill skip: prompt 1 tok < min_tokens 256 — leaving evaluation to the caller's generate() path
+[2026-11-25 14:37:02]  INFO      inference_engine      Prefill warmup-q: total=1 reused=0 evaluated=0 cache_hit=False in 0.0s
+[2026-11-25 14:37:02]  INFO      api_server            Runtime limits: tier=minimal decode_tps=2.76 prefill_tps=0.00 ctx=4096 resume_chunk=661 response=1322 idle=900s
+[2026-11-25 14:37:02]  INFO      api_server            ✓ Warmed up: qwen3-8b
+[2026-11-25 14:37:02]  INFO      inference_engine      Slot 0 released for request warmup-q
+[2026-11-25 14:37:02]  INFO      inference_engine      Producer thread exited 0.3s after cancel.
+[2026-11-25 14:42:57]  INFO      chat_template         chat_template: qwen3-8b uses its embedded template (dialect=qwen3, think-switch=True)
+[2026-11-25 14:42:57]  INFO      inference_engine      Slot 0 acquired for request 728241d1
+[2026-11-25 14:42:57]  INFO      inference_engine      Slot 0 assigned to stream request 728241d1
+[2026-11-25 14:42:57]  INFO      inference_engine      Dispatching stream request 728241d1 to backend
+[2026-11-25 14:42:57]  INFO      inference_engine      Request 728241d1 carries an explicit 3600s total deadline; it will be enforced by the caller, not by AsyncTokenBuffer.
+[2026-11-25 14:42:57]  INFO      inference_engine      Prefill budget for 728241d1: 120.0s (est_prompt_tokens=54, ewma_prefill_tps=4.00)
+[2026-11-25 14:42:57]  INFO      chunked_prefill       chunked_prefill entry: total=54 min_tokens=256 chunk=256 cache_present=True cache_entries=0
+[2026-11-25 14:42:57]  INFO      chunked_prefill       chunked_prefill skip: prompt 54 tok < min_tokens 256 — leaving evaluation to the caller's generate() path
+[2026-11-25 14:42:57]  INFO      inference_engine      Prefill 728241d1: total=54 reused=0 evaluated=0 cache_hit=False in 0.0s
+[2026-11-25 14:46:40]  INFO      inference_engine      Request 728241d1 carries an explicit 3600s total deadline; it will be enforced by the caller, not by AsyncTokenBuffer.
+[2026-11-25 14:46:40]  INFO      inference_engine      Prefill budget for 728241d1: 120.0s (est_prompt_tokens=566, ewma_prefill_tps=4.00)
+[2026-11-25 14:46:40]  INFO      chunked_prefill       chunked_prefill entry: total=566 min_tokens=256 chunk=256 cache_present=True cache_entries=1
+[2026-11-25 14:46:40]  INFO      chunked_prefill       chunked_prefill cache HIT via LlamaRAMCache: reused=565/566 tokens (stored seq had 565)
+[2026-11-25 14:46:40]  INFO      chunked_prefill       chunked_prefill done: total=566 reused=565 evaluated=0 cache_hit=True source=LlamaRAMCache
+[2026-11-25 14:46:40]  INFO      inference_engine      Prefill 728241d1: total=566 reused=565 evaluated=0 cache_hit=True in 0.2s
+[2026-11-25 14:48:57]  INFO      inference_engine      Slot 0 held 359.8s (idle 0.2s, phase=generation) request 728241d1 — long but progressing
+[2026-11-25 14:49:57]  INFO      inference_engine      Slot 0 held 419.8s (idle 0.2s, phase=generation) request 728241d1 — long but progressing
+[2026-11-25 14:50:32]  INFO      inference_engine      Request 728241d1 carries an explicit 3600s total deadline; it will be enforced by the caller, not by AsyncTokenBuffer.
+[2026-11-25 14:50:32]  INFO      inference_engine      Prefill budget for 728241d1: 120.0s (est_prompt_tokens=1078, ewma_prefill_tps=4.00)
+[2026-11-25 14:50:32]  INFO      chunked_prefill       chunked_prefill entry: total=1078 min_tokens=256 chunk=256 cache_present=True cache_entries=2
+[2026-11-25 14:50:32]  INFO      chunked_prefill       chunked_prefill cache HIT via LlamaRAMCache: reused=1077/1078 tokens (stored seq had 1077)
+[2026-11-25 14:50:32]  INFO      chunked_prefill       chunked_prefill done: total=1078 reused=1077 evaluated=0 cache_hit=True source=LlamaRAMCache
+[2026-11-25 14:50:32]  INFO      inference_engine      Prefill 728241d1: total=1078 reused=1077 evaluated=0 cache_hit=True in 0.3s
+[2026-11-25 14:50:57]  INFO      inference_engine      Slot 0 held 479.8s (idle 0.3s, phase=generation) request 728241d1 — long but progressing
+[2026-11-25 14:51:57]  INFO      inference_engine      Slot 0 held 539.8s (idle 0.0s, phase=generation) request 728241d1 — long but progressing
+[2026-11-25 14:52:57]  INFO      inference_engine      Slot 0 held 599.8s (idle 0.3s, phase=generation) request 728241d1 — long but progressing
+[2026-11-25 14:53:57]  INFO      inference_engine      Slot 0 held 659.8s (idle 0.3s, phase=generation) request 728241d1 — long but progressing
+[2026-11-25 14:54:08]  INFO      inference_engine      Request 728241d1 carries an explicit 3600s total deadline; it will be enforced by the caller, not by AsyncTokenBuffer.
+[2026-11-25 14:54:08]  INFO      inference_engine      Prefill budget for 728241d1: 120.0s (est_prompt_tokens=1590, ewma_prefill_tps=4.00)
+[2026-11-25 14:54:08]  INFO      chunked_prefill       chunked_prefill entry: total=1590 min_tokens=256 chunk=256 cache_present=True cache_entries=3
+[2026-11-25 14:54:09]  INFO      chunked_prefill       chunked_prefill cache HIT via LlamaRAMCache: reused=1589/1590 tokens (stored seq had 1589)
+[2026-11-25 14:54:09]  INFO      chunked_prefill       chunked_prefill done: total=1590 reused=1589 evaluated=0 cache_hit=True source=LlamaRAMCache
+[2026-11-25 14:54:09]  INFO      inference_engine      Prefill 728241d1: total=1590 reused=1589 evaluated=0 cache_hit=True in 0.3s
+[2026-11-25 14:54:57]  INFO      inference_engine      Slot 0 held 719.8s (idle 0.2s, phase=generation) request 728241d1 — long but progressing
+[2026-11-25 14:55:35]  WARNING   inference_engine      Repetition loop (periodic) detected for 728241d1 after 1733 tokens — ending cleanly
+[2026-11-25 14:55:35]  INFO      inference_engine      Slot 0 released for request 728241d1
+[2026-11-25 14:55:35]  INFO      inference_engine      Producer thread exited 0.4s after cancel.
+[2026-11-25 14:55:35]  INFO      api_server            POST /v1/chat/smart → 200  758469.0ms  tok=590  ttft=506544ms  dec_tps=2.34  key=web3  id=728241d1
+[2026-11-25 14:55:36]  INFO      vram_manager          VRAM defragmentation is a no-op on this hardware (no CUDA / no MPS backend); skipping defrag calls silently from now on
+[2026-11-25 14:55:38]  WARNING   telemetry             ANOMALY [warning]: gpu_0_temp=77.00 (z=4.2, mean=80.31)
+[2026-11-25 15:02:21]  WARNING   api_server            Prompt for 'qwen3-8b' exceeded context (68 > 1920 tokens) — dropped 1 oldest messages.
+[2026-11-25 15:02:21]  INFO      inference_engine      Slot 0 acquired for request cb461e28
+[2026-11-25 15:02:21]  INFO      inference_engine      Slot 0 assigned to segmented request cb461e28
+[2026-11-25 15:02:21]  INFO      inference_engine      Segment 0 starting from 275 accumulated characters
+[2026-11-25 15:02:21]  INFO      inference_engine      Request cb461e28 carries an explicit 3600s total deadline; it will be enforced by the caller, not by AsyncTokenBuffer.
+[2026-11-25 15:02:21]  INFO      inference_engine      Prefill budget for cb461e28: 120.0s (est_prompt_tokens=54, ewma_prefill_tps=4.00)
+[2026-11-25 15:02:21]  INFO      chunked_prefill       chunked_prefill entry: total=54 min_tokens=256 chunk=256 cache_present=True cache_entries=3
+[2026-11-25 15:02:21]  INFO      chunked_prefill       chunked_prefill skip: prompt 54 tok < min_tokens 256 — leaving evaluation to the caller's generate() path
+[2026-11-25 15:02:21]  INFO      inference_engine      Prefill cb461e28: total=54 reused=0 evaluated=0 cache_hit=False in 0.0s
+[2026-11-25 15:05:29]  INFO      inference_engine      Segment 1 starting from 2676 accumulated characters
+[2026-11-25 15:05:29]  INFO      inference_engine      Request cb461e28 carries an explicit 3600s total deadline; it will be enforced by the caller, not by AsyncTokenBuffer.
+[2026-11-25 15:05:29]  INFO      inference_engine      Prefill budget for cb461e28: 120.0s (est_prompt_tokens=566, ewma_prefill_tps=4.00)
+[2026-11-25 15:05:29]  INFO      chunked_prefill       chunked_prefill entry: total=566 min_tokens=256 chunk=256 cache_present=True cache_entries=4
+[2026-11-25 15:05:29]  INFO      chunked_prefill       chunked_prefill cache HIT via LlamaRAMCache: reused=565/566 tokens (stored seq had 565)
+[2026-11-25 15:05:29]  INFO      chunked_prefill       chunked_prefill done: total=566 reused=565 evaluated=0 cache_hit=True source=LlamaRAMCache
+[2026-11-25 15:05:29]  INFO      inference_engine      Prefill cb461e28: total=566 reused=565 evaluated=0 cache_hit=True in 0.1s
+[2026-11-25 15:07:57]  INFO      inference_engine      Slot 0 held 336.1s (idle 0.3s, phase=generation) request cb461e28 — long but progressing
+[2026-11-25 15:08:40]  INFO      inference_engine      Segment 2 starting from 5035 accumulated characters
+[2026-11-25 15:08:40]  INFO      inference_engine      Request cb461e28 carries an explicit 3600s total deadline; it will be enforced by the caller, not by AsyncTokenBuffer.
+[2026-11-25 15:08:40]  INFO      inference_engine      Prefill budget for cb461e28: 120.0s (est_prompt_tokens=1078, ewma_prefill_tps=4.00)
+[2026-11-25 15:08:40]  INFO      chunked_prefill       chunked_prefill entry: total=1078 min_tokens=256 chunk=256 cache_present=True cache_entries=5
+[2026-11-25 15:08:40]  INFO      chunked_prefill       chunked_prefill cache HIT via LlamaRAMCache: reused=1077/1078 tokens (stored seq had 1077)
+[2026-11-25 15:08:40]  INFO      chunked_prefill       chunked_prefill done: total=1078 reused=1077 evaluated=0 cache_hit=True source=LlamaRAMCache
+[2026-11-25 15:08:40]  INFO      inference_engine      Prefill cb461e28: total=1078 reused=1077 evaluated=0 cache_hit=True in 0.2s
+[2026-11-25 15:08:57]  INFO      inference_engine      Slot 0 held 396.1s (idle 0.3s, phase=generation) request cb461e28 — long but progressing
+[2026-11-25 15:09:57]  INFO      inference_engine      Slot 0 held 456.1s (idle 0.1s, phase=generation) request cb461e28 — long but progressing
+[2026-11-25 15:10:57]  INFO      inference_engine      Slot 0 held 516.1s (idle 0.2s, phase=generation) request cb461e28 — long but progressing
+[2026-11-25 15:11:54]  INFO      inference_engine      Segment 2 finished with natural stop → breaking loop
+[2026-11-25 15:11:54]  INFO      inference_engine      Slot 0 released for request cb461e28
+[2026-11-25 15:11:54]  INFO      api_server            POST /v1/chat/completions → 200  573398.9ms  tok=1525  ttft=503ms  dec_tps=2.66  key=cli  id=cb461e28
+[2026-11-25 15:12:00]  WARNING   telemetry             ANOMALY [warning]: gpu_0_temp=73.00 (z=3.1, mean=78.51)
+[2026-11-25 15:13:14]  INFO      inference_engine      Slot 0 acquired for request 886da8bb
+[2026-11-25 15:13:14]  INFO      inference_engine      Slot 0 assigned to stream request 886da8bb
+[2026-11-25 15:13:14]  INFO      inference_engine      Dispatching stream request 886da8bb to backend
+[2026-11-25 15:13:14]  INFO      inference_engine      Request 886da8bb carries an explicit 3600s total deadline; it will be enforced by the caller, not by AsyncTokenBuffer.
+[2026-11-25 15:13:14]  INFO      inference_engine      Prefill budget for 886da8bb: 120.0s (est_prompt_tokens=147, ewma_prefill_tps=4.00)
+[2026-11-25 15:13:14]  INFO      chunked_prefill       chunked_prefill entry: total=147 min_tokens=256 chunk=256 cache_present=True cache_entries=6
+[2026-11-25 15:13:14]  INFO      chunked_prefill       chunked_prefill skip: prompt 147 tok < min_tokens 256 — leaving evaluation to the caller's generate() path
+[2026-11-25 15:13:14]  INFO      inference_engine      Prefill 886da8bb: total=147 reused=0 evaluated=0 cache_hit=False in 0.0s
+[2026-11-25 15:16:25]  INFO      inference_engine      Request 886da8bb carries an explicit 3600s total deadline; it will be enforced by the caller, not by AsyncTokenBuffer.
+[2026-11-25 15:16:25]  INFO      inference_engine      Prefill budget for 886da8bb: 120.0s (est_prompt_tokens=659, ewma_prefill_tps=4.00)
+[2026-11-25 15:16:25]  INFO      chunked_prefill       chunked_prefill entry: total=659 min_tokens=256 chunk=256 cache_present=True cache_entries=7
+[2026-11-25 15:16:25]  INFO      chunked_prefill       chunked_prefill cache HIT via LlamaRAMCache: reused=658/659 tokens (stored seq had 658)
+[2026-11-25 15:16:25]  INFO      chunked_prefill       chunked_prefill done: total=659 reused=658 evaluated=0 cache_hit=True source=LlamaRAMCache
+[2026-11-25 15:16:25]  INFO      inference_engine      Prefill 886da8bb: total=659 reused=658 evaluated=0 cache_hit=True in 0.1s
+[2026-11-25 15:18:57]  INFO      inference_engine      Slot 0 held 343.2s (idle 0.1s, phase=generation) request 886da8bb — long but progressing
+[2026-11-25 15:19:30]  INFO      inference_engine      Request 886da8bb carries an explicit 3600s total deadline; it will be enforced by the caller, not by AsyncTokenBuffer.
+[2026-11-25 15:19:30]  INFO      inference_engine      Prefill budget for 886da8bb: 120.0s (est_prompt_tokens=1171, ewma_prefill_tps=4.00)
+[2026-11-25 15:19:30]  INFO      chunked_prefill       chunked_prefill entry: total=1171 min_tokens=256 chunk=256 cache_present=True cache_entries=8
+[2026-11-25 15:19:31]  INFO      chunked_prefill       chunked_prefill cache HIT via LlamaRAMCache: reused=1170/1171 tokens (stored seq had 1170)
+[2026-11-25 15:19:31]  INFO      chunked_prefill       chunked_prefill done: total=1171 reused=1170 evaluated=0 cache_hit=True source=LlamaRAMCache
+[2026-11-25 15:19:31]  INFO      inference_engine      Prefill 886da8bb: total=1171 reused=1170 evaluated=0 cache_hit=True in 0.2s
+[2026-11-25 15:19:57]  INFO      inference_engine      Slot 0 held 403.2s (idle 0.1s, phase=generation) request 886da8bb — long but progressing
+[2026-11-25 15:20:05]  INFO      inference_engine      Slot 0 released for request 886da8bb
+[2026-11-25 15:20:05]  INFO      api_server            POST /v1/chat/smart → 200  411036.4ms  tok=1097  ttft=9795ms  dec_tps=2.73  key=web3  id=886da8bb
+[2026-11-25 15:21:28]  INFO      inference_engine      Slot 0 acquired for request 287d9ca8
+[2026-11-25 15:21:28]  INFO      inference_engine      Slot 0 assigned to segmented request 287d9ca8
+[2026-11-25 15:21:28]  INFO      inference_engine      Segment 0 starting from 3149 accumulated characters
+[2026-11-25 15:21:28]  INFO      inference_engine      Request 287d9ca8 carries an explicit 3600s total deadline; it will be enforced by the caller, not by AsyncTokenBuffer.
+[2026-11-25 15:21:28]  INFO      inference_engine      Prefill budget for 287d9ca8: 120.0s (est_prompt_tokens=777, ewma_prefill_tps=4.00)
+[2026-11-25 15:21:28]  INFO      chunked_prefill       chunked_prefill entry: total=777 min_tokens=256 chunk=256 cache_present=True cache_entries=8
+[2026-11-25 15:21:28]  INFO      chunked_prefill       chunked_prefill cache HIT via LlamaRAMCache: reused=1/777 tokens (stored seq had 565)
+[2026-11-25 15:21:43]  INFO      chunked_prefill       chunked_prefill saved block state at pos=257 (size=37900165 bytes)
+[2026-11-25 15:21:58]  INFO      chunked_prefill       chunked_prefill saved block state at pos=513 (size=75651973 bytes)
+[2026-11-25 15:22:14]  INFO      chunked_prefill       chunked_prefill saved block state at pos=769 (size=113403781 bytes)
+[2026-11-25 15:22:14]  INFO      chunked_prefill       chunked_prefill done: total=777 reused=1 evaluated=775 cache_hit=True source=LlamaRAMCache
+[2026-11-25 15:22:14]  INFO      inference_engine      Prefill 287d9ca8: total=777 reused=1 evaluated=775 cache_hit=True in 46.6s
+[2026-11-25 15:25:35]  INFO      inference_engine      Segment 1 starting from 5109 accumulated characters
+[2026-11-25 15:25:35]  INFO      inference_engine      Request 287d9ca8 carries an explicit 3600s total deadline; it will be enforced by the caller, not by AsyncTokenBuffer.
+[2026-11-25 15:25:35]  INFO      inference_engine      Prefill budget for 287d9ca8: 232.4s (est_prompt_tokens=1289, ewma_prefill_tps=16.64)
+[2026-11-25 15:25:35]  INFO      chunked_prefill       chunked_prefill entry: total=1289 min_tokens=256 chunk=49 cache_present=True cache_entries=9
+[2026-11-25 15:25:36]  INFO      chunked_prefill       chunked_prefill cache HIT via LlamaRAMCache: reused=1288/1289 tokens (stored seq had 1288)
+[2026-11-25 15:25:36]  INFO      chunked_prefill       chunked_prefill done: total=1289 reused=1288 evaluated=0 cache_hit=True source=LlamaRAMCache
+[2026-11-25 15:25:36]  INFO      inference_engine      Prefill 287d9ca8: total=1289 reused=1288 evaluated=0 cache_hit=True in 0.3s
+[2026-11-25 15:26:57]  INFO      inference_engine      Slot 0 held 329.2s (idle 0.3s, phase=generation) request 287d9ca8 — long but progressing
+[2026-11-25 15:27:57]  INFO      inference_engine      Slot 0 held 389.2s (idle 0.1s, phase=generation) request 287d9ca8 — long but progressing
+[2026-11-25 15:28:57]  INFO      inference_engine      Slot 0 held 449.2s (idle 0.1s, phase=generation) request 287d9ca8 — long but progressing
+[2026-11-25 15:29:06]  INFO      inference_engine      Segment 2 starting from 7438 accumulated characters
+[2026-11-25 15:29:06]  INFO      inference_engine      Request 287d9ca8 carries an explicit 3600s total deadline; it will be enforced by the caller, not by AsyncTokenBuffer.
+[2026-11-25 15:29:06]  INFO      inference_engine      Prefill budget for 287d9ca8: 324.8s (est_prompt_tokens=1801, ewma_prefill_tps=16.64)
+[2026-11-25 15:29:06]  INFO      chunked_prefill       chunked_prefill entry: total=1801 min_tokens=256 chunk=49 cache_present=True cache_entries=9
+[2026-11-25 15:29:06]  INFO      chunked_prefill       chunked_prefill cache HIT via LlamaRAMCache: reused=1800/1801 tokens (stored seq had 1800)
+[2026-11-25 15:29:06]  INFO      chunked_prefill       chunked_prefill done: total=1801 reused=1800 evaluated=0 cache_hit=True source=LlamaRAMCache
+[2026-11-25 15:29:06]  INFO      inference_engine      Prefill 287d9ca8: total=1801 reused=1800 evaluated=0 cache_hit=True in 0.3s
+[2026-11-25 15:29:48]  INFO      inference_engine      Segment 2 finished with natural stop → breaking loop
+[2026-11-25 15:29:48]  INFO      inference_engine      Slot 0 released for request 287d9ca8
+[2026-11-25 15:29:48]  INFO      api_server            [287d9ca8] segmented prefill: reused=1 cached_prompt_tokens=1
+[2026-11-25 15:29:48]  INFO      api_server            POST /v1/chat/completions → 200  500311.7ms  tok=1097  ttft=47843ms  dec_tps=2.42  key=cli  id=287d9ca8
+[2026-11-25 15:29:56]  WARNING   telemetry             ANOMALY [warning]: gpu_0_temp=68.00 (z=3.5, mean=76.80)
+[2026-11-25 15:30:36]  INFO      performance_analyzer  Configuration loaded from /home/deve-oops/AMB-OPT/local-llm-cloud/local-llm-server/config.yaml
+[2026-11-25 15:30:56]  WARNING   telemetry             ANOMALY [warning]: gpu_0_temp=58.00 (z=3.1, mean=75.45)
+[2026-11-25 15:30:57]  INFO      uvicorn.error         Shutting down
+[2026-11-25 15:30:57]  INFO      uvicorn.error         Waiting for application shutdown.
+[2026-11-25 15:30:57]  INFO      api_server            Shutting down…
+[2026-11-25 15:30:57]  INFO      system_optimizer      [DRY-RUN] would restore 0 baseline entries
+[2026-11-25 15:30:57]  WARNING   _internal             Log handler reaper task stopped
+[2026-11-25 15:30:57]  INFO      suspend_inhibitor     SuspendInhibitor: released.
+[2026-11-25 15:30:57]  INFO      inference_engine      InferenceEngine shutdown (req=3 tok=1688 err=0 oom=0)
+[2026-11-25 15:30:57]  INFO      vram_manager          Shutting down VRAMManager...
+[2026-11-25 15:30:57]  INFO      vram_manager          Background defrag thread stopped
+[2026-11-25 15:30:57]  INFO      vram_manager          VRAMManager shutdown complete
+[2026-11-25 15:30:57]  INFO      hybrid_manager        HybridMemoryManager shutdown complete (read_errors=0 write_errors=0)
+[2026-11-25 15:30:57]  INFO      ram_optimizer         RAMOptimizer: closed 0 mmap handles
+[2026-11-25 15:30:57]  INFO      ram_optimizer         RAMOptimizer shutdown complete
+[2026-11-25 15:30:57]  INFO      swap_handler          SwapHandler shutdown: 0 entries, 0.0 MB used
+[2026-11-25 15:30:57]  INFO      telemetry             Telemetry collection stopped
+[2026-11-25 15:30:57]  INFO      model_loader          Unloading model 'qwen3-8b'
+[2026-11-25 15:30:58]  INFO      model_loader          Model 'qwen3-8b' unloaded (clean=True)
+[2026-11-25 15:30:58]  INFO      key_store             KeyStore database connection closed
+[2026-11-25 15:30:58]  INFO      api_server            Server stopped.
+[2026-11-25 15:30:58]  INFO      uvicorn.error         Application shutdown complete.
+[2026-11-25 15:30:58]  INFO      uvicorn.error         Finished server process [685395]
+[2026-11-25 15:31:08]  INFO      api_server            Log format: minimal → /home/deve-oops/AMB-OPT/local-llm-cloud/logs/llm_server.log
+[2026-11-25 15:31:08]  INFO      api_server            ⚡ Local LLM Cloud v1.0.0 starting
+[2026-11-25 15:31:08]  INFO      api_server            BitNet enabled: False
+[2026-11-25 15:31:08]  INFO      uvicorn.error         Started server process [716280]
+[2026-11-25 15:31:08]  INFO      uvicorn.error         Waiting for application startup.
+[2026-11-25 15:31:08]  INFO      api_server            ╔══ Local LLM Cloud v1.0.0 starting (pid=716280) ══╗
+[2026-11-25 15:31:08]  INFO      api_server            === Running startup validation ===
+[2026-11-25 15:31:08]  INFO      api_server            ✓ llama-cpp-python available
+[2026-11-25 15:31:08]  INFO      api_server            ✓ aiosqlite available
+[2026-11-25 15:31:08]  INFO      api_server            ✓ SPECTRE PYTHONPATH applied
+[2026-11-25 15:31:08]  INFO      model_unified_env     BitNetState loaded from /home/deve-oops/.config/local-llm/bitnet_state.json (available=False)
+[2026-11-25 15:31:08]  INFO      api_server            ✓ Model: loader ready  (profile='qwen3-4b'  backend=gguf)
+[2026-11-25 15:31:08]  INFO      api_server            === Startup validation passed ===
+[2026-11-25 15:31:08]  INFO      hardware_detector     Starting hardware detection ...
+[2026-11-25 15:31:08]  INFO      hardware_detector     Adaptive facts: ram_channels=1  bw_theoretical=19.2 GB/s  gtt_total=6928 bw_measured=12.7 GB/s  llama_cpp_backends=['gpu', 'cpu']  gpu_offload=True
+[2026-11-25 15:31:08]  INFO      hardware_detector     Detection done: 1 GPU(s), primary=Advanced Micro Devices, Inc. [AMD/ATI] Picasso/Raven 2 [Radeon Vega Series / Radeon Vega Mobile Series] (rev c1), recommended=rocm
+[2026-11-25 15:31:08]  INFO      api_server            GPU detection: rocm (1 GPU(s))
+[2026-11-25 15:31:09]  INFO      hardware_profiles     Bandwidth selection: 12.7 GB/s (measurement (66% of theory))
+[2026-11-25 15:31:09]  INFO      hardware_profiles     target_tps=8.00 from tier_default (no bench, no model size yet — will refine after load)
+[2026-11-25 15:31:09]  INFO      hardware_profiles     UMA APU budget (carve-out ONLY): carve_out=2048 MB gtt=6928 MB (not used) reserve=200 MB
+[2026-11-25 15:31:09]  INFO      hardware_profiles     Applying profile‑specific overrides for 'apu_2gb': {'context_length': 4096, 'n_batch': 2048, 'n_parallel': 1, 'flash_attn': True, 'context_vs_layers_priority': 'layers', 'kv_cache_quant': 'f16', 'speculative_decoding': False, 'use_mlock': False}
+[2026-11-25 15:31:09]  INFO      hardware_profiles     Computed profile: name=apu_2gb target_tps=8.00 [tier_default] n_batch=2048/512 ctx=4096 kv=f16 n_parallel=1 spec=False priority=layers mlock=False [ram_ch=1 bw_meas=12.7 bw_theo=19.2 gtt=6928 eff_vram=6381]
+[2026-11-25 15:31:09]  INFO      api_server            Calibration: qwen3-4b: measuring f16 KV, 36/36 layers
+[2026-11-25 15:31:33]  INFO      api_server            Calibration: qwen3-4b: measuring q8_0 KV, 36/36 layers
+[2026-11-25 15:31:59]  INFO      api_server            Calibration: qwen3-4b: re-measuring f16 KV (warm)
+[2026-11-25 15:32:20]  INFO      calibrate             calibrated qwen3-4b: 5.06 tok/s decode, 74.5 tok/s prefill, KV=f16, layers=36/36
+[2026-11-25 15:32:20]  INFO      api_server            autoconfig: machine: AMD Ryzen 7 3700U with Radeon Vega Mobile Gfx · 4c/8t · RAM 13856 MB (1-ch, 12.7 GB/s) · hip (Advanced Micro Devices, Inc. [AMD/ATI] Picasso/Raven 2 [Radeon Vega Series / Radeon Vega Mobile Series] (rev c1), unified)
+[2026-11-25 15:32:20]  INFO      api_server            autoconfig: budgets: RAM 10392 MB · device 6235 MB · resident: qwen3-4b
+[2026-11-25 15:32:20]  INFO      api_server            autoconfig:   granite-4.2-8b           ok        on demand ngl=40  ctx=4096   kv=f16   ram=6178 MB dev=5940 MB speed=2.81 tok/s (bench)
+[2026-11-25 15:32:20]  INFO      api_server            autoconfig:   qwen3-8b                 ok        on demand ngl=36  ctx=4096   kv=f16   ram=5626 MB dev=5266 MB speed=2.76 tok/s (bench)
+[2026-11-25 15:32:20]  INFO      api_server            autoconfig:   qwen3-4b                 ok        AUTOLOAD  ngl=36  ctx=4096   kv=f16   ram=3213 MB dev=2988 MB speed=5.06 tok/s (bench)
+[2026-11-25 15:32:20]  INFO      api_server            autoconfig:   qwen3-0.6b               ok        on demand ngl=28  ctx=4096   kv=f16   ram=1313 MB dev=1191 MB speed=16.91 tok/s (roofline)
+[2026-11-25 15:32:20]  INFO      api_server            autoconfig:   ggml-model               ok        on demand ngl=0   ctx=4096   kv=f16   ram=1560 MB dev=0 MB speed=9.10 tok/s (roofline)
+[2026-11-25 15:32:20]  INFO      api_server            autoconfig:   calibration qwen3-4b: measured
+[2026-11-25 15:32:20]  INFO      api_server            autoconfig:   warning: ggml-model: single-channel RAM: CPU-resident layers decode slowly
+[2026-11-25 15:32:20]  INFO      api_server            autoconfig: computed profiles written to /var/lib/local-llm/model_profiles.json
+[2026-11-25 15:32:20]  INFO      api_server            Memory budget: vram_target=0.95 ram_target=0.75 (source=memory.ram_utilization_target)
+[2026-11-25 15:32:20]  INFO      vram_manager          VRAMManager: 2.1 GB total, target util=95.0%, defrag threshold=30.0%, bg interval=60.0s, cuda=False, mps=False
+[2026-11-25 15:32:20]  INFO      vram_manager          Background defrag thread started (interval=60.0s)
+[2026-11-25 15:32:20]  INFO      ram_optimizer         RAMOptimizer: max=10392 MB lz4=True max_mmaps=64 max_prefetch=16
+[2026-11-25 15:32:20]  INFO      swap_handler          SwapHandler: dir=/var/lib/local-llm/swap max=32.0GB compress=True recovered=0 entries
+[2026-11-25 15:32:20]  INFO      hybrid_manager        HybridMemoryManager: vram=2048MB ram=13856MB ssd=32768MB compress=True
+[2026-11-25 15:32:21]  INFO      seq_planner           continuous_batching.n_seq_max=auto → 4  (n_ctx=4096 weights=2382MB avail=11672MB cores=4)
+[2026-11-25 15:32:21]  INFO      hardware_profiles     Bandwidth selection: 12.7 GB/s (measurement (66% of theory))
+[2026-11-25 15:32:21]  INFO      hardware_profiles     target_tps=8.00 from tier_default (no bench, no model size yet — will refine after load)
+[2026-11-25 15:32:21]  INFO      hardware_profiles     UMA APU budget (carve-out ONLY): carve_out=2048 MB gtt=6928 MB (not used) reserve=200 MB
+[2026-11-25 15:32:21]  INFO      hardware_profiles     Applying profile‑specific overrides for 'apu_2gb': {'context_length': 4096, 'n_batch': 2048, 'n_parallel': 1, 'flash_attn': True, 'context_vs_layers_priority': 'layers', 'kv_cache_quant': 'f16', 'speculative_decoding': False, 'use_mlock': False}
+[2026-11-25 15:32:21]  INFO      hardware_profiles     Computed profile: name=apu_2gb target_tps=8.00 [tier_default] n_batch=2048/512 ctx=4096 kv=f16 n_parallel=1 spec=False priority=layers mlock=False [ram_ch=1 bw_meas=12.7 bw_theo=19.2 gtt=6928 eff_vram=6381]
+[2026-11-25 15:32:21]  INFO      model_loader          ModelLoader profile=apu_2gb vram_budget=1745MB
+[2026-11-25 15:32:21]  INFO      drive_pipeline        CPUThrottler: 4 physical cores → 4 threads
+[2026-11-25 15:32:21]  INFO      drive_pipeline        All BLAS thread env vars → 4
+[2026-11-25 15:32:21]  INFO      model_loader          AsyncWeightPipeline disabled (model_loader.async_weight_pipeline_enabled=false) — no madvise prefetch thread will run. The prefetch guesses layer byte ranges from file size with no feedback from llama.cpp, so on memory-bandwidth-bound hardware it competes with decode rather than helping it. See config.yaml's model_loader.async_weight_pipeline_enabled comment for how to benchmark a change.
+[2026-11-25 15:32:21]  INFO      api_server            Kernels subsystem: enabled=False
+[2026-11-25 15:32:21]  INFO      inference_engine      BitNet disabled by config — skipping BitNet loader
+[2026-11-25 15:32:21]  INFO      inference_engine      Drive pipeline active
+[2026-11-25 15:32:21]  INFO      scheduler             Scheduler initialization starting...
+[2026-11-25 15:32:21]  INFO      scheduler             Scheduler AIMD config: target_tps=3.1 batch=[1,1] interval=5.0s hysteresis=2 margins=[0.85, 0.95]
+[2026-11-25 15:32:21]  WARNING   scheduler             Scheduler queue limits: per_priority=64 total=256
+[2026-11-25 15:32:21]  INFO      scheduler             Priority weights configured: {'LOW': 1, 'NORMAL': 2, 'HIGH': 4, 'URGENT': 8} (ratio: 8.0:1)
+[2026-11-25 15:32:21]  WARNING   scheduler             Scheduler preemption persistence: disabled (in-memory only)
+[2026-11-25 15:32:21]  INFO      scheduler             Scheduler initialized: batch=1 queue=[64,256] prune_interval=10.0s preempt_persist=disabled thermal_throttle=inactive
+[2026-11-25 15:32:21]  INFO      inference_engine      UniversalKernelManager disabled (kernels.enabled=false) — GGUF path does not use PyTorch kernels
+[2026-11-25 15:32:21]  INFO      inference_engine      Faulthandler enabled → /var/lib/local-llm/crash.log
+[2026-11-25 15:32:21]  INFO      inference_engine      Native llama.cpp log → /var/lib/local-llm/llama_native.log
+[2026-11-25 15:32:21]  WARNING   inference_engine      _auto_register_bitnet_from_state: BitNet disabled — skipping
+[2026-11-25 15:32:21]  INFO      inference_engine      InferenceEngine v1.0.0 initialised (GGUF + BitNet, unified)
+[2026-11-25 15:32:21]  INFO      inference_engine      Continuous batching enabled in config: n_seq_max=4 kv_unified=True (batched engine will initialize on first generate_stream call once a model is loaded)
+[2026-11-25 15:32:21]  INFO      inference_engine      Scheduler start task enqueued
+[2026-11-25 15:32:21]  INFO      inference_engine      Slot health check started
+[2026-11-25 15:32:21]  INFO      api_server            ✓ GPU: rocm (1)
+[2026-11-25 15:32:21]  INFO      scheduler             Scheduler background tasks started
+[2026-11-25 15:32:21]  INFO      telemetry             Telemetry collection started (base interval=5.0s)
+[2026-11-25 15:32:21]  WARNING   _internal             Log handler reaper task started
+[2026-11-25 15:32:21]  INFO      api_server            Autoload order: reserved (primary) first, then residual (draft)
+[2026-11-25 15:32:21]  INFO      model_loader          Load [00aaaf1c]: model_id='qwen3-4b' path='/home/deve-oops/models/Qwen3-4B-Q4_K_M.gguf'
+[2026-11-25 15:32:21]  INFO      model_loader          ModelLoader: 'qwen3-4b' target_tps=5.06 [bench_file] KV=f16
+[2026-11-25 15:32:21]  INFO      model_loader          Pre‑flight: model='qwen3-4b' size=2381.6MB required=2741MB usable=45900MB est TPS=4.55 status=comfortable
+[2026-11-25 15:32:21]  INFO      model_loader          Load [00aaaf1c]: initiating load
+[2026-11-25 15:32:21]  INFO      model_loader          Skipping NVMe sysctls (system.allow_kernel_tuning=false) — dirty_* / vfs_cache_pressure left at host defaults
+[2026-11-25 15:32:21]  INFO      model_loader          Context sizing for 'qwen3-4b': n_ctx_train=40960, profile_floor=4096, kv_bytes/token=override, computed=4096, chosen=4096 (mc.context_length=4096)
+[2026-11-25 15:32:21]  INFO      drive_pipeline        NVMe advisor: model=2381MB  ram_free=8208MB
+[2026-11-25 15:32:21]  INFO      drive_pipeline        NVMe: WILLNEED — pre-caching 2381MB (fits 40% of free RAM)
+[2026-11-25 15:32:21]  INFO      layer_streamer        Backend: llama_cpp
+[2026-11-25 15:32:21]  INFO      layer_streamer        AdaptiveLoader: cpus=logical:8 physical:4 threads=4 batch_threads=4 parallel=1
+[2026-11-25 15:32:21]  INFO      layer_streamer        Continuous batching requested: n_seq_max=4 kv_unified=True n_outputs_max=4 (applied via Llama(**kwargs) → context_params C struct)
+[2026-11-25 15:32:21]  INFO      layer_streamer        Load attempt 1/5: n_ctx=4096 n_batch=2048 n_ubatch=512 gpu=37 parallel=1
+[2026-11-25 15:32:21]  INFO      capabilities          llama-cpp-python caps: version=0.3.36 gpu_offload=True cache=LlamaRAMCache longest_prefix=True scores_bloat=True batch_api=False | continuous_batching: n_seq_max=True kv_unified=True llama_batch=True(llama_cpp._internals.LlamaBatch) add_sequence=True ctx_decode=True seq_rm=True params_default(n_seq_max=1 kv_unified=False)
+[2026-11-25 15:32:21]  INFO      inference_engine      LeanLlama active: stripping scores from save_state (llama-cpp-python 0.3.36, saves n_tokens×vocab×4 B per cached prefix)
+[2026-11-25 15:32:21]  INFO      conversation_store    Conversation store: postgresql initialized (pool size=10)
+[2026-11-25 15:32:22]  INFO      key_store             KeyStore initialized: backend=postgresql
+[2026-11-25 15:32:22]  INFO      api_server            ✓ KeyStore enabled
+[2026-11-25 15:32:22]  INFO      suspend_inhibitor     SuspendInhibitor: active (sleep:idle:handle-lid-switch:handle-suspend-key:handle-hibernate-key:handle-power-key) — host will not suspend/idle-sleep while this process runs.
+[2026-11-25 15:32:22]  INFO      api_server            ╚══ Ready  GPUs=1  CPU=4C/8T  RAM=13856MB  profile=apu_2gb  auth=keystore ══╝
+[2026-11-25 15:32:22]  INFO      api_server            ════════════════════════════════════════════════════════════════════════════════════════════════════
+[2026-11-25 15:32:22]  INFO      uvicorn.error         Application startup complete.
+[2026-11-25 15:32:22]  INFO      uvicorn.error         Uvicorn running on http://127.0.0.1:8080 (Press CTRL+C to quit)
+[2026-11-25 15:32:22]  INFO      performance_analyzer  Configuration loaded from /home/deve-oops/AMB-OPT/local-llm-cloud/local-llm-server/config.yaml
+[2026-11-25 15:32:23]  INFO      layer_streamer        ✓ Load successful in 2.33s | model=Qwen3-4B-Q4_K_M.gguf gpu=req=37 actual=? | ctx=req=4096 actual=4096 | batch=2048/512 parallel=1
+[2026-11-25 15:32:23]  INFO      layer_streamer        n_seq_max=4 will be applied by BatchedInferenceEngine context rebuild on first request (kwargs passthrough does not modify context_params on this llama-cpp-python build): n_seq_max mismatch: requested 4, context has 1 — Llama(**kwargs) did not apply it
+[2026-11-25 15:32:23]  INFO      layer_streamer        prefix cache sized from KV math: 147456 B/token, want=1216 MB, cap=3491 MB -> 1216 MB
+[2026-11-25 15:32:23]  INFO      layer_streamer        LlamaRAMCache attached (capacity=1216 MB) — longest-prefix lookup active
+[2026-11-25 15:32:23]  INFO      model_loader          VRAM tracker: skipping bookkeeping for 'qwen3-4b' (est 2381 MB, carve-out budget 1745 MB, GTT total 6928 MB). Model is running from GTT-addressable RAM, not the carve-out — see /v1/metrics for the driver-reported allocation.
+[2026-11-25 15:32:23]  INFO      model_loader          Loaded 'qwen3-4b' 2.4s | backend=llama_cpp | gpu=36/36 | strategy=manual | vram=2381MB
+[2026-11-25 15:32:23]  INFO      model_loader          Model 'qwen3-4b' loaded in 2.60s | gpu=36/36
+[2026-11-25 15:32:23]  INFO      api_server            ✓ Autoloaded: qwen3-4b (3213 MB)
+[2026-11-25 15:32:23]  INFO      inference_engine      Batched engine device budget: 8673 MB (carve-out/VRAM 1745 + GTT 6928)
+[2026-11-25 15:32:23]  INFO      batched_engine        BatchedInferenceEngine: n_seq_max=4 (ctx=4, pf_reserved=0) n_ctx=4096 n_batch=2048 n_vocab=151936 eos=151645 prefill_chunk=511
+[2026-11-25 15:32:23]  INFO      batched_engine        _rebuild_context feasibility: peak=4335 MB (weights=2381 new_ctx=1442 kv=1280 compute=160 output=2 kv_unified=True kv_seqs=1) ram_free=9974 device_budget=8673 — allowed
+[2026-11-25 15:32:24]  INFO      api_server            Runtime limits: tier=small decode_tps=5.06 prefill_tps=0.00 ctx=4096 resume_chunk=1214 response=2428 idle=600s
+[2026-11-25 15:32:24]  INFO      inference_engine      BatchedInferenceEngine initialized: n_seq_max=4 kv_unified=True prefill_chunk=511 pf_enabled=False
+[2026-11-25 15:32:24]  INFO      batched_engine        admit seq_id=0 rid=warmup-q prompt_len=1 reused=0
+[2026-11-25 15:32:24]  INFO      api_server            ✓ Warmed up: qwen3-4b
+[2026-11-25 15:32:24]  INFO      batched_engine        evict seq=0 rid=warmup-q gen=1 retained=2
+[2026-11-25 15:33:16]  INFO      chat_template         chat_template: qwen3-4b uses its embedded template (dialect=qwen3, think-switch=True)
+[2026-11-25 15:33:16]  INFO      batched_engine        admit seq_id=1 rid=5f44d619 prompt_len=54 reused=0
+[2026-11-25 15:40:41]  INFO      batched_engine        evict seq=1 rid=5f44d619 gen=1802 retained=1855
+[2026-11-25 15:40:41]  INFO      api_server            POST /v1/chat/smart → 200  444764.9ms  tok=1798  ttft=1154ms  dec_tps=4.05  key=web3  id=5f44d619
+[2026-11-25 15:40:41]  INFO      vram_manager          VRAM defragmentation is a no-op on this hardware (no CUDA / no MPS backend); skipping defrag calls silently from now on
+[2026-11-25 15:42:23]  INFO      batched_engine        admit seq_id=1 rid=a9d8d471 prompt_len=1186 reused=0
+[2026-11-25 15:51:47]  INFO      batched_engine        evict seq=1 rid=a9d8d471 gen=1907 retained=0
+[2026-11-25 15:51:47]  WARNING   api_server            Decode 3.49 tok/s for 'qwen3-4b' is 69% of its benchmark (5.06 tok/s, KV=f16). Likely configuration drift or contention — run `llm-server calibrate --force` with the service stopped.
+[2026-11-25 15:51:47]  INFO      api_server            POST /v1/chat/completions → 200  563865.9ms  tok=1903  ttft=18622ms  dec_tps=3.49  key=cli  id=a9d8d471
+[2026-11-25 15:51:54]  WARNING   telemetry             ANOMALY [critical]: gpu_0_temp=61.00 (z=5.2, mean=72.97)
+[2026-11-25 15:52:14]  INFO      batched_engine        admit seq_id=2 rid=91b3fc93 prompt_len=147 reused=0
+[2026-11-25 15:53:29]  INFO      batched_engine        admit seq_id=3 rid=613324a7 prompt_len=834 reused=0
+[2026-11-25 15:59:39]  INFO      batched_engine        evict seq=2 rid=91b3fc93 gen=979 retained=1125
+[2026-11-25 15:59:39]  WARNING   api_server            Decode 2.25 tok/s for 'qwen3-4b' is 44% of its benchmark (5.06 tok/s, KV=f16). Likely configuration drift or contention — run `llm-server calibrate --force` with the service stopped.
+[2026-11-25 15:59:39]  INFO      api_server            POST /v1/chat/smart → 200  444817.3ms  tok=978  ttft=10441ms  dec_tps=2.25  key=web3  id=91b3fc93
+[2026-11-25 16:04:15]  INFO      batched_engine        evict seq=3 rid=613324a7 gen=1617 retained=0
+[2026-11-25 16:04:15]  INFO      api_server            POST /v1/chat/completions → 200  645806.6ms  tok=1610  ttft=14286ms  dec_tps=2.55  key=cli  id=613324a7
+[2026-11-25 16:04:32]  INFO      uvicorn.error         Shutting down
+[2026-11-25 16:04:32]  INFO      uvicorn.error         Waiting for application shutdown.
+[2026-11-25 16:04:32]  INFO      api_server            Shutting down…
+[2026-11-25 16:04:32]  INFO      system_optimizer      [DRY-RUN] would restore 0 baseline entries
+[2026-11-25 16:04:32]  WARNING   _internal             Log handler reaper task stopped
+[2026-11-25 16:04:32]  INFO      suspend_inhibitor     SuspendInhibitor: released.
+[2026-11-25 16:04:32]  INFO      inference_engine      InferenceEngine shutdown (req=4 tok=6305 err=0 oom=0)
+[2026-11-25 16:04:32]  INFO      vram_manager          Shutting down VRAMManager...
+[2026-11-25 16:04:32]  INFO      vram_manager          Background defrag thread stopped
+[2026-11-25 16:04:32]  INFO      vram_manager          VRAMManager shutdown complete
+[2026-11-25 16:04:32]  INFO      hybrid_manager        HybridMemoryManager shutdown complete (read_errors=0 write_errors=0)
+[2026-11-25 16:04:32]  INFO      ram_optimizer         RAMOptimizer: closed 0 mmap handles
+[2026-11-25 16:04:32]  INFO      ram_optimizer         RAMOptimizer shutdown complete
+[2026-11-25 16:04:32]  INFO      swap_handler          SwapHandler shutdown: 0 entries, 0.0 MB used
+[2026-11-25 16:04:32]  INFO      telemetry             Telemetry collection stopped
+[2026-11-25 16:04:32]  INFO      model_loader          Unloading model 'qwen3-4b'
+[2026-11-25 16:04:33]  INFO      model_loader          Model 'qwen3-4b' unloaded (clean=True)
+[2026-11-25 16:04:33]  INFO      key_store             KeyStore database connection closed
+[2026-11-25 16:04:33]  INFO      api_server            Server stopped.
+[2026-11-25 16:04:33]  INFO      uvicorn.error         Application shutdown complete.
+[2026-11-25 16:04:33]  INFO      uvicorn.error         Finished server process [716280]
